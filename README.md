@@ -3,4 +3,4 @@ names
 
 distributed redundant name service
 
-Travis: https://travis-ci.org/afrantisak/names/builds
+Travis: [![Build Status](https://travis-ci.org/afrantisak/names.png?branch=master)](https://travis-ci.org/afrantisak/names) https://travis-ci.org/afrantisak/names/builds
