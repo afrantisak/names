@@ -6,8 +6,8 @@ def run(server_addresses):
     
     # the first address is us
     reply = context.socket(zmq.REP)
-    print "Server:", server_addresses[0]
     reply.bind(server_addresses[0])
+    print "Server:", server_addresses[0]
     
     # the rest are peers
     peers = context.socket(zmq.DEALER)

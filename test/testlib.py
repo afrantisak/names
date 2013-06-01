@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, time
 import subprocess
 
 def cmdstr(cmd):
@@ -13,6 +13,7 @@ class Servers():
         for index in xrange(len(addresses)):
             rotated = addresses[index:] + addresses[:index]
             self.servers.append(subprocess.Popen(python(['server.py'] + rotated)))
+        time.sleep(1) # bit of a pause to synchronize things
             
     def kill(self):
         for server in self.servers:
