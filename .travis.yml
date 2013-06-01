@@ -4,5 +4,5 @@ python:
 
 install: pip install pyzmq
 
-script:  python test/basic.py | diff test/basic.ref -
+script:  python test/runner.py names.tst
     
