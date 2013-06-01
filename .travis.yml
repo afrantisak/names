@@ -4,4 +4,5 @@ python:
 
 install: pip install pyzmq
 
-script:  python test/basic.py
+script:  python test/basic.py | diff test/basic.ref -
+    
