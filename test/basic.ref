@@ -1,6 +1,6 @@
-Server: tcp://127.0.0.1:8000
+Client: tcp://127.0.0.1:8000
 None
-Server: tcp://127.0.0.1:8000
+Client: tcp://127.0.0.1:8000
 ['', '1', 'OK', 'asdf', 'qwer']
-Server: tcp://127.0.0.1:8000
+Client: tcp://127.0.0.1:8000
 qwer

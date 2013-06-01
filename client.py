@@ -10,7 +10,7 @@ class Client(object):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.DEALER)
         for server_address in server_addresses:
-            print "Server:", server_address
+            print "Client:", server_address
             self.socket.connect(server_address)
         self.poll = zmq.Poller()
         self.poll.register(self.socket, zmq.POLLIN)

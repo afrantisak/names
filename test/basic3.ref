@@ -1,0 +1,12 @@
+Client: tcp://127.0.0.1:8000
+Client: tcp://127.0.0.1:8001
+Client: tcp://127.0.0.1:8002
+None
+Client: tcp://127.0.0.1:8000
+Client: tcp://127.0.0.1:8001
+Client: tcp://127.0.0.1:8002
+['', '1', 'OK', 'asdf', 'qwer']
+Client: tcp://127.0.0.1:8000
+Client: tcp://127.0.0.1:8001
+Client: tcp://127.0.0.1:8002
+qwer
