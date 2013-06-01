@@ -53,4 +53,8 @@ if __name__ == "__main__":
                         help="tst filename")
     args = parser.parse_args()
     
+    # TODO: use default runner.tst file and only override with --tst option
+    # TODO: --reset-ref [testname] will re-write the .ref file for that test
+    # TODO: --test-only [testname] will run only that test
+    
     sys.exit(run(args.filename))

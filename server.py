@@ -5,8 +5,8 @@ def run(server_addresses):
     context = zmq.Context()
     
     # the first address is us
-    reply = context.socket(zmq.REP)
-    reply.bind(server_addresses[0])
+    server = context.socket(zmq.REP)
+    server.bind(server_addresses[0])
     print "Server:", server_addresses[0]
     
     # the rest are peers
@@ -20,46 +20,43 @@ def run(server_addresses):
 
     while True:
         # wait for a message
-        request = reply.recv_multipart()
-        if not request:
+        msg_recv = server.recv_multipart()
+        if not msg_recv:
             break  # Interrupted
         
-        print request
-        assert len(request) >= 4
+        print msg_recv
+        assert len(msg_recv) >= 3
 
         # parse message
-        sequence = request[0]
-        reqtype = request[1]
-        key = request[2]
-        value = request[3]
+        sequence = msg_recv[0]
+        key = msg_recv[1]
+        value = msg_recv[2]
 
-        # respond
-        if reqtype == 'REQ':
-            if key:
+        # if key is set, then it is either a named request or a push
+        if key:
+            if value:
+                # store value and sync
+                # TODO: duplicate value check?
+                values[key] = value
+                msg_send = [sequence, key, value]
+                server.send_multipart(msg_send)
+            else:
                 # do we know it?
                 if key in values:
                     # look up value and reply
                     value = values[key]
                 else:
                     value = ''
-                msg = [sequence, 'PUSH', key, value]
-                reply.send_multipart(msg)
-            else:
-                pass
-                # send all values
-                #msg = [sequence, 'PUSH']
-                #for key, value in values.iteritems():
-                #    msg += [key, value]
-            continue
-        if reqtype == 'PUSH':
-            # store value and sync
-            # TODO: duplicate check
-            values[key] = value
-            msg = [sequence, 'OK', key, value]
-            reply.send_multipart(msg)
-            continue
+                msg_send = [sequence, key, value]
+                server.send_multipart(msg_send)
+        else:
+            # key not set, it is a request all TODO
+            #msg_send = [sequence]
+            #for key, value in values.iteritems():
+            #    msg_send += [key, value]
+            pass
 
-    server.setsockopt(zmq.LINGER, 0)  # Terminate eaerly
+    server.setsockopt(zmq.LINGER, 0)  # Terminate early
 
 if __name__ == "__main__":
     import argparse

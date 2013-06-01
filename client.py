@@ -36,14 +36,14 @@ class Client(object):
             socks = dict(self.poll.poll((endtime - time.time())))
             if socks.get(self.socket) == zmq.POLLIN:
                 msg = self.socket.recv_multipart()
-                assert len(msg) >= 5
+                assert len(msg) >= 4
                 sequence = int(msg[1])
-                if sequence == self.sequence and msg[4]:
+                if sequence == self.sequence and msg[3]:
                     break
         return msg
 
     def request(self, request):
-        msg = ['REQ', request, '']
+        msg = [request, '']
 
         # send it to all servers
         seq = self.send(msg)
@@ -51,10 +51,10 @@ class Client(object):
         # wait (with timeout) for the first response that matches the sequence number
         reply = self.recv(seq)
         if reply:
-            return reply[4]
+            return reply[3]
         
     def push(self, key, value):
-        msg = ['PUSH', key, value]
+        msg = [key, value]
 
         # send it to all servers
         seq = self.send(msg)
