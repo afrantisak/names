@@ -24,42 +24,34 @@ def Timeout(task, timeout):
         task.kill()
     return task.returncode()
     
-def run_timeout(cmd, timeout = 20):
+def TimeoutProc(proc, timeout):
     class Task():
-        def __init__(self, cmd):
-            self.cmd = cmd
         def run(self):
-            self.proc = subprocess.Popen(self.cmd)
+            self.proc = proc()
             self.proc.communicate()
         def kill(self):
             # kill with extreme prejudice
             os.killpg(os.getpgid(self.proc.pid), signal.SIGHUP)            
         def returncode(self):
             return self.proc.returncode
-    return Timeout(Task(cmd), timeout)
+    return Timeout(Task(), timeout)
+    
+def run_timeout(cmd, timeout = 20):
+    def Proc():
+        return subprocess.Popen(cmd)
+    return TimeoutProc(Proc, timeout)
 
 def run_timeout_ref(cmd, ref, genref, timeout = 20):
-    class Task():
-        def __init__(self, cmd, ref, genref):
-            self.cmd = cmd
-            self.ref = ref
-            self.genref = genref
-        def run(self):
-            if self.genref:
-                with open(self.ref, 'w') as out:
-                    self.proc = subprocess.Popen(self.cmd, stdout = out)
-                    self.proc.communicate()
-            else:
-                proc = subprocess.Popen(self.cmd, stdout = subprocess.PIPE)
-                self.proc = subprocess.Popen(['diff', self.ref, '-'], stdin = proc.stdout)
-                proc.stdout.close()
-                self.proc.communicate()
-        def kill(self):
-            # kill with extreme prejudice
-            os.killpg(os.getpgid(self.proc.pid), signal.SIGHUP)            
-        def returncode(self):
-            return self.proc.returncode
-    return Timeout(Task(cmd, ref, genref), timeout)
+    def Proc():
+        if genref:
+            with open(ref, 'w') as out:
+                return subprocess.Popen(md, stdout = out)
+        else:
+            proc = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+            proc2 = subprocess.Popen(['diff', ref, '-'], stdin = proc.stdout)
+            proc.stdout.close()
+            return proc2
+    return TimeoutProc(Proc, timeout)
 
 def python(args):
     cmd = [sys.executable] + args
