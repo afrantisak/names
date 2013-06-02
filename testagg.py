@@ -67,14 +67,16 @@ def pythonref(args):
     cmd = [sys.executable] + args + ['|', 'diff', ref, '-']
     return run_timeout_ref(cmd, ref)
         
-def run(filename):
-    abspath = os.path.abspath(filename)
+def run(testfilename, tests):
+    abspath = os.path.abspath(testfilename)
     ret = 0
-    for tokens, nLine, sLine in configfile(open(filename, 'r')):
+    for tokens, nLine, sLine in configfile(open(abspath, 'r')):
         if len(tokens) < 2:
             print "Invalid file %s: must have at least 2 tokens in line #%d: '%s'" % (abspath, nLine, sLine)
             return 1
         args = tokens[1:]
+        if tests and args[0] not in tests:
+            continue
         print args[0],
         sys.stdout.flush()
         if tokens[0] == 'python':
@@ -94,12 +96,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="test runner")
     parser.add_argument('--tstfile', default="default.tst",
                         help="tst filename")
+    parser.add_argument('tests', nargs='?',
+                        help="run these tests")
     args = parser.parse_args()
     
-    # TODO: use default runner.tst file and only override with --tst option
     # TODO: --reset-ref [testname] will re-write the .ref file for that test
-    # TODO: --test-only [testname] will run only that test
     # TODO: use YAML file format
     # TODO: capture test output, show it nicely, and ONLY if something fails
     
-    sys.exit(run(args.tstfile))
+    sys.exit(run(args.tstfile, args.tests))
