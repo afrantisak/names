@@ -4,5 +4,5 @@ python:
 
 install: pip install pyzmq
 
-script:  python test/runner.py names.tst
+script:  python testagg.py
     

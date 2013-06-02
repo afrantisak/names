@@ -92,7 +92,7 @@ def run(filename):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="test runner")
-    parser.add_argument('filename',
+    parser.add_argument('--tstfile', default="default.tst",
                         help="tst filename")
     args = parser.parse_args()
     
@@ -102,4 +102,4 @@ if __name__ == "__main__":
     # TODO: use YAML file format
     # TODO: capture test output, show it nicely, and ONLY if something fails
     
-    sys.exit(run(args.filename))
+    sys.exit(run(args.tstfile))
