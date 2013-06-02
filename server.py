@@ -1,5 +1,6 @@
 import sys
 import zmq
+import collections
 
 def run(server_addresses):
     context = zmq.Context()
@@ -16,7 +17,7 @@ def run(server_addresses):
         print "  Peer:", peer_address
 
     # data map
-    values = {}
+    values = collections.defaultdict(list)
 
     while True:
         # wait for a message
@@ -32,29 +33,32 @@ def run(server_addresses):
         key = msg_recv[1]
         value = msg_recv[2]
 
-        # if key is set, then it is either a named request or a push
+        # if key is set, then it is either a push or a named request 
         if key:
+            # if value is set, then it is a psh
             if value:
                 # store value and sync
-                # TODO: duplicate value check?
-                values[key] = value
-                msg_send = [sequence, key, value]
+                values[key].append(value)
+                msg_send = [sequence]
+                for value in values[key]:
+                    msg_send += [key, value]
                 server.send_multipart(msg_send)
-            else:
+            else: # it is a request
                 # do we know it?
+                msg_send = [sequence]
                 if key in values:
-                    # look up value and reply
-                    value = values[key]
+                    for value in values[key]:
+                        msg_send += [key, value]
                 else:
-                    value = ''
-                msg_send = [sequence, key, value]
+                    msg_send += [key, '']
                 server.send_multipart(msg_send)
         else:
-            # key not set, it is a request all TODO
-            #msg_send = [sequence]
-            #for key, value in values.iteritems():
-            #    msg_send += [key, value]
-            pass
+            # key not set, it is a request all
+            msg_send = [sequence]
+            for key in values.keys():
+                for value in values[key]:
+                    msg_send += [key, value]
+            server.send_multipart(msg_send)
 
     server.setsockopt(zmq.LINGER, 0)  # Terminate early
 
