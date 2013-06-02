@@ -17,7 +17,7 @@ def configfile(file):
         
 def time_delta(lhs, rhs):
     delta = lhs - rhs
-    return delta.seconds + delta.microseconds/1E6    
+    return delta.seconds + delta.microseconds/1E6
         
 def run_timeout(cmd, timeout = 20):
     proc = subprocess.Popen(cmd)
@@ -31,9 +31,10 @@ def run_timeout(cmd, timeout = 20):
     return proc.returncode
         
 class Timeout():
-    def __init__(self, cmd, ref, timeout):
+    def __init__(self, cmd, ref, genref, timeout):
         self.cmd = cmd
         self.ref = ref
+        self.genref = genref
         self.diff = None
         self.thread = threading.Thread(target=self.run)
         self.thread.start()
@@ -45,29 +46,36 @@ class Timeout():
             self.thread.join()
         self.returncode = self.diff.returncode
     def run(self):
-        proc = subprocess.Popen(self.cmd, stdout = subprocess.PIPE)
-        self.diff = subprocess.Popen(['diff', self.ref, '-'], stdin = proc.stdout)
-        proc.stdout.close()
-        self.diff.communicate()
+        if self.genref:
+            with open(self.ref, 'w') as out:
+                self.diff = subprocess.Popen(self.cmd, stdout = out)
+                self.diff.communicate()
+        else:
+            proc = subprocess.Popen(self.cmd, stdout = subprocess.PIPE)
+            self.diff = subprocess.Popen(['diff', self.ref, '-'], stdin = proc.stdout)
+            proc.stdout.close()
+            self.diff.communicate()
 
-def run_timeout_ref(cmd, ref, timeout = 20):
-    proc = Timeout(cmd, ref, timeout)
+def run_timeout_ref(cmd, ref, genref, timeout = 20):
+    proc = Timeout(cmd, ref, genref, timeout)
     return proc.returncode
 
 def python(args):
     cmd = [sys.executable] + args
     return run_timeout(cmd)
     
-def pythonref(args):
+def pythonref(args, genref):
     # get first token; it must be the python script Name
     script = args[0]
     # compute the ref file name, must be same as python script name except .ref instead of .py
     ref = os.path.splitext(script)[0] + ".ref"
     # generate command to run the python script and compare output to the ref file
     cmd = [sys.executable] + args + ['|', 'diff', ref, '-']
-    return run_timeout_ref(cmd, ref)
+    if genref:
+        print "GENERATING REF",
+    return run_timeout_ref(cmd, ref, genref)
         
-def run(testfilename, tests):
+def run(testfilename, tests, genref):
     abspath = os.path.abspath(testfilename)
     ret = 0
     for tokens, nLine, sLine in configfile(open(abspath, 'r')):
@@ -82,7 +90,7 @@ def run(testfilename, tests):
         if tokens[0] == 'python':
             ret |= python(args)
         elif tokens[0] == 'python-ref':
-            ret |= pythonref(args)
+            ret |= pythonref(args, genref)
         else:
             print "Invalid file %s: invalid instruction '%s' in line #%d: '%s'" % (abspath, tokens[0], nLine, sLine)
         if ret:
@@ -97,11 +105,12 @@ if __name__ == "__main__":
     parser.add_argument('--tstfile', default="default.tst",
                         help="tst filename")
     parser.add_argument('tests', nargs='?',
-                        help="run these tests")
+                        help="run these tests only")
+    parser.add_argument('--genref', default=False, action='store_true',
+                        help="(re)generate *.ref files for those tests that use them")
     args = parser.parse_args()
     
-    # TODO: --reset-ref [testname] will re-write the .ref file for that test
-    # TODO: use YAML file format
+    # TODO: use YAML or some other std file format reader
     # TODO: capture test output, show it nicely, and ONLY if something fails
     
-    sys.exit(run(args.tstfile, args.tests))
+    sys.exit(run(args.tstfile, args.tests, args.genref))
