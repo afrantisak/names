@@ -15,50 +15,51 @@ def configfile(file):
             continue
         yield tokens, nLine, line.rstrip()
         
-def time_delta(lhs, rhs):
-    delta = lhs - rhs
-    return delta.seconds + delta.microseconds/1E6
-        
-def run_timeout(cmd, timeout = 20):
-    proc = subprocess.Popen(cmd)
-    time_start = datetime.datetime.now()
-    while proc.returncode is None and time_delta(datetime.datetime.now(), time_start) < timeout:
-        proc.poll()
-    if proc.returncode is None:
-        proc.kill()
+def Timeout(task, timeout):
+    thread = threading.Thread(target=task.run)
+    thread.start()
+    thread.join(timeout)
+    if thread.is_alive():
         print "TIMED OUT"
-        return 127
-    return proc.returncode
-        
-class Timeout():
-    def __init__(self, cmd, ref, genref, timeout):
-        self.cmd = cmd
-        self.ref = ref
-        self.genref = genref
-        self.diff = None
-        self.thread = threading.Thread(target=self.run)
-        self.thread.start()
-        self.thread.join(timeout)
-        if self.thread.is_alive():
-            print "TIMED OUT"
+        task.kill()
+    return task.returncode()
+    
+def run_timeout(cmd, timeout = 20):
+    class Task():
+        def __init__(self, cmd):
+            self.cmd = cmd
+        def run(self):
+            self.proc = subprocess.Popen(self.cmd)
+            self.proc.communicate()
+        def kill(self):
             # kill with extreme prejudice
-            os.killpg(os.getpgid(self.diff.pid), signal.SIGHUP)
-            self.thread.join()
-        self.returncode = self.diff.returncode
-    def run(self):
-        if self.genref:
-            with open(self.ref, 'w') as out:
-                self.diff = subprocess.Popen(self.cmd, stdout = out)
-                self.diff.communicate()
-        else:
-            proc = subprocess.Popen(self.cmd, stdout = subprocess.PIPE)
-            self.diff = subprocess.Popen(['diff', self.ref, '-'], stdin = proc.stdout)
-            proc.stdout.close()
-            self.diff.communicate()
+            os.killpg(os.getpgid(self.proc.pid), signal.SIGHUP)            
+        def returncode(self):
+            return self.proc.returncode
+    return Timeout(Task(cmd), timeout)
 
 def run_timeout_ref(cmd, ref, genref, timeout = 20):
-    proc = Timeout(cmd, ref, genref, timeout)
-    return proc.returncode
+    class Task():
+        def __init__(self, cmd, ref, genref):
+            self.cmd = cmd
+            self.ref = ref
+            self.genref = genref
+        def run(self):
+            if self.genref:
+                with open(self.ref, 'w') as out:
+                    self.proc = subprocess.Popen(self.cmd, stdout = out)
+                    self.proc.communicate()
+            else:
+                proc = subprocess.Popen(self.cmd, stdout = subprocess.PIPE)
+                self.proc = subprocess.Popen(['diff', self.ref, '-'], stdin = proc.stdout)
+                proc.stdout.close()
+                self.proc.communicate()
+        def kill(self):
+            # kill with extreme prejudice
+            os.killpg(os.getpgid(self.proc.pid), signal.SIGHUP)            
+        def returncode(self):
+            return self.proc.returncode
+    return Timeout(Task(cmd, ref, genref), timeout)
 
 def python(args):
     cmd = [sys.executable] + args
