@@ -1,4 +1,8 @@
 import sys, os
+import subprocess
+import datetime
+import threading
+import signal
 
 def configfile(file):
     nLine = 0
@@ -11,9 +15,48 @@ def configfile(file):
             continue
         yield tokens, nLine, line.rstrip()
         
+def time_delta(lhs, rhs):
+    delta = lhs - rhs
+    return delta.seconds + delta.microseconds/1E6    
+        
+def run_timeout(cmd, timeout = 20):
+    proc = subprocess.Popen(cmd)
+    time_start = datetime.datetime.now()
+    while proc.returncode is None and time_delta(datetime.datetime.now(), time_start) < timeout:
+        proc.poll()
+    if proc.returncode is None:
+        proc.kill()
+        print "TIMED OUT"
+        return 127
+    return proc.returncode
+        
+class Timeout():
+    def __init__(self, cmd, ref, timeout):
+        self.cmd = cmd
+        self.ref = ref
+        self.diff = None
+        self.thread = threading.Thread(target=self.run)
+        self.thread.start()
+        self.thread.join(timeout)
+        if self.thread.is_alive():
+            print "TIMED OUT"
+            # kill with extreme prejudice
+            os.killpg(os.getpgid(self.diff.pid), signal.SIGHUP)
+            self.thread.join()
+        self.returncode = self.diff.returncode
+    def run(self):
+        proc = subprocess.Popen(self.cmd, stdout = subprocess.PIPE)
+        self.diff = subprocess.Popen(['diff', self.ref, '-'], stdin = proc.stdout)
+        proc.stdout.close()
+        self.diff.communicate()
+
+def run_timeout_ref(cmd, ref, timeout = 20):
+    proc = Timeout(cmd, ref, timeout)
+    return proc.returncode
+
 def python(args):
     cmd = [sys.executable] + args
-    return os.system(' '.join(cmd))
+    return run_timeout(cmd)
     
 def pythonref(args):
     # get first token; it must be the python script Name
@@ -22,7 +65,7 @@ def pythonref(args):
     ref = os.path.splitext(script)[0] + ".ref"
     # generate command to run the python script and compare output to the ref file
     cmd = [sys.executable] + args + ['|', 'diff', ref, '-']
-    return os.system(' '.join(cmd))
+    return run_timeout_ref(cmd, ref)
         
 def run(filename):
     abspath = os.path.abspath(filename)
@@ -32,7 +75,7 @@ def run(filename):
             print "Invalid file %s: must have at least 2 tokens in line #%d: '%s'" % (abspath, nLine, sLine)
             return 1
         args = tokens[1:]
-        print args[0], '',
+        print args[0],
         sys.stdout.flush()
         if tokens[0] == 'python':
             ret |= python(args)
@@ -56,5 +99,7 @@ if __name__ == "__main__":
     # TODO: use default runner.tst file and only override with --tst option
     # TODO: --reset-ref [testname] will re-write the .ref file for that test
     # TODO: --test-only [testname] will run only that test
+    # TODO: use YAML file format
+    # TODO: capture test output, show it nicely, and ONLY if something fails
     
     sys.exit(run(args.filename))

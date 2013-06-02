@@ -14,20 +14,21 @@ class Servers():
             rotated = addresses[index:] + addresses[:index]
             self.servers.append(subprocess.Popen(python(['server.py'] + rotated)))
         time.sleep(1) # bit of a pause to synchronize things
-            
-    def kill(self):
+    def __enter__(self):
+        return self
+    def __exit__(self, type, value, traceback):
         for server in self.servers:
-            server.kill()
-
+            if server.returncode is None:
+                server.kill()
+            
 def Client(args, addresses):
     os.system(cmdstr(python(['client.py'] + args + addresses)))
     
 def BasicTest(addresses):
-    servers = Servers(addresses)
-    Client(['--request=asdf'], addresses)
-    Client(['--push=asdf:qwer'], addresses)
-    Client(['--request=asdf'], addresses)
-    servers.kill()
+    with Servers(addresses) as servers:
+        Client(['--request=asdf'], addresses)
+        Client(['--push=asdf:qwer'], addresses)
+        Client(['--request=asdf'], addresses)
 
     
 
