@@ -1,6 +1,6 @@
 Client: tcp://127.0.0.1:8000
 None
 Client: tcp://127.0.0.1:8000
-['', '1', 'asdf', 'qwer']
+defaultdict(<type 'list'>, {'asdf': ['qwer']})
 Client: tcp://127.0.0.1:8000
-qwer
+defaultdict(<type 'list'>, {'asdf': ['qwer']})

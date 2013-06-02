@@ -11,10 +11,10 @@ def run(server_addresses):
     print "Server:", server_addresses[0]
     
     # the rest are peers
-    peers = context.socket(zmq.DEALER)
-    for peer_address in server_addresses[1:]:
-        peers.connect(peer_address)
-        print "  Peer:", peer_address
+    #peers = context.socket(zmq.DEALER)
+    #for peer_address in server_addresses[1:]:
+    #    peers.connect(peer_address)
+    #    print "  Peer:", peer_address
 
     # data map
     values = collections.defaultdict(list)
@@ -30,11 +30,20 @@ def run(server_addresses):
 
         # parse message
         sequence = msg_recv[0]
-        key = msg_recv[1]
-        value = msg_recv[2]
+        msg_recv = msg_recv[1:]
+        if len(msg_recv) == 0:
+            # key not set, it is a request all
+            msg_send = [sequence]
+            for key in values.keys():
+                for value in values[key]:
+                    msg_send += [key, value]
+            server.send_multipart(msg_send)
+            
+        while len(msg_recv):
+            key = msg_recv[0]
+            value = msg_recv[1]
+            msg_recv = msg_recv[2:]
 
-        # if key is set, then it is either a push or a named request 
-        if key:
             # if value is set, then it is a psh
             if value:
                 # store value and sync
@@ -52,13 +61,6 @@ def run(server_addresses):
                 else:
                     msg_send += [key, '']
                 server.send_multipart(msg_send)
-        else:
-            # key not set, it is a request all
-            msg_send = [sequence]
-            for key in values.keys():
-                for value in values[key]:
-                    msg_send += [key, value]
-            server.send_multipart(msg_send)
 
     server.setsockopt(zmq.LINGER, 0)  # Terminate early
 

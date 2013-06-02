@@ -1,6 +1,7 @@
 import sys
 import time
 import zmq
+import collections
 
 class Client(object):
     def __init__(self, server_addresses, timeout = 2.5):
@@ -28,55 +29,67 @@ class Client(object):
             self.socket.send_multipart(msg)
         return self.sequence
             
-    def recv(self, sequence):
-        # wait (with timeout) for the first valid response that matches the sequence number
+    def recv(self, sequence, validfunc):
+        # wait (with timeout) for responses that match the sequence number until validfunc returns valid dict
         endtime = time.time() + self.timeout
         while time.time() < endtime:
-            msg = None
             socks = dict(self.poll.poll((endtime - time.time())))
             if socks.get(self.socket) == zmq.POLLIN:
                 msg = self.socket.recv_multipart()
                 assert len(msg) >= 4
                 sequence = int(msg[1])
-                if sequence == self.sequence and msg[3]:
-                    break
-        return msg
+                if sequence == self.sequence:
+                    resp = validfunc(msg[2:])
+                    if resp:
+                        return resp
+        return None
 
-    def request(self, request):
-        msg = [request, '']
+    def request(self, requests):
+        msg = []
+        for key, value in requests.iteritems():
+            msg += [key, value]
 
         # send it to all servers
         seq = self.send(msg)
-
-        # wait (with timeout) for the first response that matches the sequence number
-        reply = self.recv(seq)
-        if reply:
-            return reply[3]
         
-    def push(self, key, value):
-        msg = [key, value]
-
-        # send it to all servers
-        seq = self.send(msg)
+        # this function conglomer
+        response = collections.defaultdict(list)
+        def validfunc(data):
+            while len(data):
+                key = data[0]
+                value = data[1]
+                data = data[2:]
+                if value:
+                    response[key].append(value)
+            for request in requests:
+                if request not in response:
+                    return None
+            return response
 
         # wait (with timeout) for the first response that matches the sequence number
-        return self.recv(seq)
+        reply = self.recv(seq, validfunc)
+        if reply:
+            return reply
         
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="nameservice test client")
-    parser.add_argument('--request',
+    parser.add_argument('--request', nargs='+',
                         help="request key")
-    parser.add_argument('--push',
-                        help="push key:value (use colon as separator)")
+    parser.add_argument('--push', nargs='+',
+                        help="push key:value (i.e. use colon as separator)")
     parser.add_argument('servers', nargs='+',
                         help="server(s)")
     args = parser.parse_args()
 
     client = Client(args.servers)
+    requests = {}
     if args.request:
-        print client.request(args.request)
+        for key in args.request:
+            requests[key] = ''
     if args.push:
-        pair = args.push.split(':')
-        print client.push(pair[0], pair[1])
+        for kvp in args.push:
+            pair = kvp.split(':')
+            requests[pair[0]] = pair[1]
+    print client.request(requests)
     client.destroy()
