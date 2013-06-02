@@ -4,6 +4,9 @@ import datetime
 import threading
 import signal
 
+# TODO: use YAML or some other std file format reader
+# TODO: capture test output, show it nicely, and ONLY if something fails
+
 def configfile(file):
     nLine = 0
     for line in file:
@@ -15,19 +18,19 @@ def configfile(file):
             continue
         yield tokens, nLine, line.rstrip()
         
-def Timeout(task, timeout):
+def Timeout(task, seconds):
     thread = threading.Thread(target=task.run)
     thread.start()
-    thread.join(timeout)
+    thread.join(seconds)
     if thread.is_alive():
         print "TIMED OUT"
         task.kill()
     return task.returncode()
     
-def TimeoutProc(proc, timeout):
+def TimeoutProc(procfunc, timeout):
     class Task():
         def run(self):
-            self.proc = proc()
+            self.proc = procfunc()
             self.proc.communicate()
         def kill(self):
             # kill with extreme prejudice
@@ -48,9 +51,9 @@ def run_timeout_ref(cmd, ref, genref, timeout = 20):
                 return subprocess.Popen(md, stdout = out)
         else:
             proc = subprocess.Popen(cmd, stdout = subprocess.PIPE)
-            proc2 = subprocess.Popen(['diff', ref, '-'], stdin = proc.stdout)
+            diff = subprocess.Popen(['diff', ref, '-'], stdin = proc.stdout)
             proc.stdout.close()
-            return proc2
+            return diff
     return TimeoutProc(Proc, timeout)
 
 def python(args):
@@ -70,7 +73,7 @@ def pythonref(args, genref):
         
 def run(testfilename, tests, genref):
     abspath = os.path.abspath(testfilename)
-    ret = 0
+    aggregate = 0
     for tokens, nLine, sLine in configfile(open(abspath, 'r')):
         if len(tokens) < 2:
             print "Invalid file %s: must have at least 2 tokens in line #%d: '%s'" % (abspath, nLine, sLine)
@@ -81,16 +84,17 @@ def run(testfilename, tests, genref):
         print args[0],
         sys.stdout.flush()
         if tokens[0] == 'python':
-            ret |= python(args)
+            ret = python(args)
         elif tokens[0] == 'python-ref':
-            ret |= pythonref(args, genref)
+            ret = pythonref(args, genref)
         else:
             print "Invalid file %s: invalid instruction '%s' in line #%d: '%s'" % (abspath, tokens[0], nLine, sLine)
         if ret:
             print "FAIL"
         else:
             print "ok"
-    return 0
+        aggregate |= ret
+    return aggregate
         
 if __name__ == "__main__":
     import argparse
@@ -102,8 +106,5 @@ if __name__ == "__main__":
     parser.add_argument('--genref', default=False, action='store_true',
                         help="(re)generate *.ref files for those tests that use them")
     args = parser.parse_args()
-    
-    # TODO: use YAML or some other std file format reader
-    # TODO: capture test output, show it nicely, and ONLY if something fails
     
     sys.exit(run(args.tstfile, args.tests, args.genref))
