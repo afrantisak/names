@@ -43,14 +43,14 @@ def TimeoutProcess(procfunc, timeout):
     
 def run_cmd(cmd, timeout):
     def Proc(stdout, stdin, stderr):
-        return subprocess.Popen(cmd, stdout=stdout, stdin=stdin, stderr=stderr)
+        return subprocess.Popen(cmd, stdout=stdout, stdin=stdin, stderr=stderr, preexec_fn=os.setpgrp)
     return TimeoutProcess(Proc, timeout)
 
 def run_cmd_ref(cmd, ref, genref, timeout):
     def Proc(stdout, stdin, stderr):
         if genref:
             with open(ref, 'w') as out:
-                return subprocess.Popen(md, stdout = out)
+                return subprocess.Popen(cmd, stdout = out, preexec_fn=os.setpgrp)
         else:
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
             diff = subprocess.Popen(['diff', ref, '-'], stdin=proc.stdout, stdout=stdout, stderr=stderr, 
