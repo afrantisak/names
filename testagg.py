@@ -3,6 +3,8 @@ import subprocess
 import datetime
 import threading
 import signal
+import cStringIO
+import StringIO
 
 # TODO: use YAML or some other std file format reader
 # TODO: capture test output, show it nicely, and ONLY if something fails
@@ -30,8 +32,10 @@ def Timeout(task, seconds):
 def TimeoutProc(procfunc, timeout):
     class Task():
         def run(self):
-            self.proc = procfunc()
-            self.proc.communicate()
+            self.proc = procfunc(subprocess.PIPE, None, subprocess.STDOUT)
+            out = self.proc.communicate()[0]
+            if out:
+                print out.rstrip()
         def kill(self):
             # kill with extreme prejudice
             os.killpg(os.getpgid(self.proc.pid), signal.SIGHUP)            
@@ -40,18 +44,18 @@ def TimeoutProc(procfunc, timeout):
     return Timeout(Task(), timeout)
     
 def run_timeout(cmd, timeout = 20):
-    def Proc():
-        return subprocess.Popen(cmd)
+    def Proc(stdout, stdin, stderr):
+        return subprocess.Popen(cmd, stdout=stdout, stdin=stdin, stderr=stderr)
     return TimeoutProc(Proc, timeout)
 
 def run_timeout_ref(cmd, ref, genref, timeout = 20):
-    def Proc():
+    def Proc(stdout, stdin, stderr):
         if genref:
             with open(ref, 'w') as out:
                 return subprocess.Popen(md, stdout = out)
         else:
             proc = subprocess.Popen(cmd, stdout = subprocess.PIPE)
-            diff = subprocess.Popen(['diff', ref, '-'], stdin = proc.stdout)
+            diff = subprocess.Popen(['diff', ref, '-'], stdin = proc.stdout, stdout=stdout, stderr=stderr)
             proc.stdout.close()
             return diff
     return TimeoutProc(Proc, timeout)
@@ -83,16 +87,33 @@ def run(testfilename, tests, genref):
             continue
         print args[0],
         sys.stdout.flush()
+        
+        # capture stdout
+        old_stdout = sys.stdout
+        sys.stdout = mystdout = StringIO.StringIO()
+
+        # run the job
+        ret = -1
         if tokens[0] == 'python':
             ret = python(args)
         elif tokens[0] == 'python-ref':
             ret = pythonref(args, genref)
-        else:
+
+        # uncapture stdout
+        sys.stdout = old_stdout
+
+        if ret == -1:
             print "Invalid file %s: invalid instruction '%s' in line #%d: '%s'" % (abspath, tokens[0], nLine, sLine)
-        if ret:
-            print "FAIL"
+        elif ret:
+            print "FAILED"
         else:
             print "ok"
+
+        # if there was anything printed to stdout, print it nicely indented
+        if mystdout.getvalue():
+            for line in mystdout.getvalue().split('\n'):
+                print "   ", line.rstrip()
+
         aggregate |= ret
     return aggregate
         
