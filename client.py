@@ -36,7 +36,7 @@ class Client(object):
             socks = dict(self.poll.poll((endtime - time.time())))
             if socks.get(self.socket) == zmq.POLLIN:
                 msg = self.socket.recv_multipart()
-                assert len(msg) >= 4
+                assert len(msg) >= 2
                 sequence = int(msg[1])
                 if sequence == self.sequence:
                     resp = validfunc(msg[2:])

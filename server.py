@@ -1,23 +1,41 @@
 import sys
 import zmq
 import collections
+import client
 
 def run(server_addresses):
     context = zmq.Context()
     
+    # data map
+    values = collections.defaultdict(set)
+
     # the first address is us
     server = context.socket(zmq.REP)
     server.bind(server_addresses[0])
     print "Server:", server_addresses[0]
-    
-    # the rest are peers
-    #peers = context.socket(zmq.DEALER)
-    #for peer_address in server_addresses[1:]:
-    #    peers.connect(peer_address)
-    #    print "  Peer:", peer_address
 
-    # data map
-    values = collections.defaultdict(set)
+    # the rest are peers
+    peers = client.Client(server_addresses[1:])
+    
+    # get initial dump from peers
+    msg = []
+    seq = peers.send(msg)
+        
+    # this function accepts the first response
+    response = collections.defaultdict(set)
+    def validfunc(data):
+        while len(data):
+            key = data[0]
+            value = data[1]
+            data = data[2:]
+            if value:
+                response[key].add(value)
+        return response
+
+    # wait (with timeout) for the first response that matches the sequence number
+    reply = peers.recv(seq, validfunc)
+    if reply:
+        values = reply
 
     while True:
         # wait for a message
@@ -25,7 +43,7 @@ def run(server_addresses):
         if not msg_recv:
             break  # Interrupted
         
-        assert len(msg_recv) >= 3
+        assert len(msg_recv) >= 1
 
         # parse message
         sequence = msg_recv[0]
