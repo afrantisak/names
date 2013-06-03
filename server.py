@@ -17,7 +17,7 @@ def run(server_addresses):
     #    print "  Peer:", peer_address
 
     # data map
-    values = collections.defaultdict(list)
+    values = collections.defaultdict(set)
 
     while True:
         # wait for a message
@@ -46,7 +46,7 @@ def run(server_addresses):
             # if value is set, then it is a psh
             if value:
                 # store value and sync
-                values[key].append(value)
+                values[key].add(value)
                 for value in values[key]:
                     msg_send += [key, value]
             else: # it is a request

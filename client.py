@@ -53,14 +53,14 @@ class Client(object):
         seq = self.send(msg)
         
         # this function conglomer
-        response = collections.defaultdict(list)
+        response = collections.defaultdict(set)
         def validfunc(data):
             while len(data):
                 key = data[0]
                 value = data[1]
                 data = data[2:]
                 if value:
-                    response[key].append(value)
+                    response[key].add(value)
             for request in requests:
                 if request not in response:
                     return None
