@@ -25,19 +25,18 @@ def run(server_addresses):
         if not msg_recv:
             break  # Interrupted
         
-        print msg_recv
         assert len(msg_recv) >= 3
 
         # parse message
         sequence = msg_recv[0]
         msg_recv = msg_recv[1:]
+        msg_send = [sequence]
+
         if len(msg_recv) == 0:
             # key not set, it is a request all
-            msg_send = [sequence]
             for key in values.keys():
                 for value in values[key]:
                     msg_send += [key, value]
-            server.send_multipart(msg_send)
             
         while len(msg_recv):
             key = msg_recv[0]
@@ -48,19 +47,16 @@ def run(server_addresses):
             if value:
                 # store value and sync
                 values[key].append(value)
-                msg_send = [sequence]
                 for value in values[key]:
                     msg_send += [key, value]
-                server.send_multipart(msg_send)
             else: # it is a request
                 # do we know it?
-                msg_send = [sequence]
                 if key in values:
                     for value in values[key]:
                         msg_send += [key, value]
                 else:
                     msg_send += [key, '']
-                server.send_multipart(msg_send)
+        server.send_multipart(msg_send)
 
     server.setsockopt(zmq.LINGER, 0)  # Terminate early
 

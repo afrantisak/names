@@ -48,7 +48,7 @@ class Client(object):
         msg = []
         for key, value in requests.iteritems():
             msg += [key, value]
-
+        
         # send it to all servers
         seq = self.send(msg)
         
@@ -74,9 +74,9 @@ class Client(object):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="nameservice test client")
-    parser.add_argument('--request', nargs='+',
+    parser.add_argument('--request', action="append",
                         help="request key")
-    parser.add_argument('--push', nargs='+',
+    parser.add_argument('--push', action="append",
                         help="push key:value (i.e. use colon as separator)")
     parser.add_argument('servers', nargs='+',
                         help="server(s)")
