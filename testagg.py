@@ -4,10 +4,8 @@ import datetime
 import threading
 import signal
 import cStringIO
-import StringIO
 
 # TODO: use YAML or some other std file format reader
-# TODO: capture test output, show it nicely, and ONLY if something fails
 
 def configfile(file):
     nLine = 0
@@ -43,12 +41,12 @@ def TimeoutProc(procfunc, timeout):
             return self.proc.returncode
     return Timeout(Task(), timeout)
     
-def run_timeout(cmd, timeout = 20):
+def run_cmd(cmd, timeout = 20):
     def Proc(stdout, stdin, stderr):
         return subprocess.Popen(cmd, stdout=stdout, stdin=stdin, stderr=stderr)
     return TimeoutProc(Proc, timeout)
 
-def run_timeout_ref(cmd, ref, genref, timeout = 20):
+def run_cmd_ref(cmd, ref, genref, timeout = 20):
     def Proc(stdout, stdin, stderr):
         if genref:
             with open(ref, 'w') as out:
@@ -60,11 +58,11 @@ def run_timeout_ref(cmd, ref, genref, timeout = 20):
             return diff
     return TimeoutProc(Proc, timeout)
 
-def python(args):
+def run_python(args):
     cmd = [sys.executable] + args
-    return run_timeout(cmd)
+    return run_cmd(cmd)
     
-def pythonref(args, genref):
+def run_python_ref(args, genref):
     # get first token; it must be the python script Name
     script = args[0]
     # compute the ref file name, must be same as python script name except .ref instead of .py
@@ -73,7 +71,39 @@ def pythonref(args, genref):
     cmd = [sys.executable] + args + ['|', 'diff', ref, '-']
     if genref:
         print "GENERATING REF",
-    return run_timeout_ref(cmd, ref, genref)
+    return run_cmd_ref(cmd, ref, genref)
+    
+def run_test(instruction, name, args, genref):
+    print name,
+    sys.stdout.flush()
+    
+    # capture stdout
+    old_stdout = sys.stdout
+    sys.stdout = mystdout = cStringIO.StringIO()
+
+    # run the job
+    ret = -1
+    if instruction == 'python':
+        ret = run_python([name] + args)
+    elif instruction == 'python-ref':
+        ret = run_python_ref([name] + args, genref)
+
+    # uncapture stdout
+    sys.stdout = old_stdout
+
+    if ret == -1:
+        print "Invalid file %s: invalid instruction '%s' in line #%d: '%s'" % (abspath, instruction, nLine, sLine)
+    elif ret:
+        print "FAILED"
+    else:
+        print "ok"
+
+    # if there was anything printed to stdout, print it, nicely indented
+    if mystdout.getvalue():
+        for line in mystdout.getvalue().split('\n'):
+            print "   ", line.rstrip()
+            
+    return ret
         
 def run(testfilename, tests, genref):
     abspath = os.path.abspath(testfilename)
@@ -82,39 +112,16 @@ def run(testfilename, tests, genref):
         if len(tokens) < 2:
             print "Invalid file %s: must have at least 2 tokens in line #%d: '%s'" % (abspath, nLine, sLine)
             return 1
-        args = tokens[1:]
-        if tests and args[0] not in tests:
-            continue
-        print args[0],
-        sys.stdout.flush()
         
-        # capture stdout
-        old_stdout = sys.stdout
-        sys.stdout = mystdout = StringIO.StringIO()
+        instruction = tokens[0]
+        name = tokens[1]
+        args = tokens[2:]
 
-        # run the job
-        ret = -1
-        if tokens[0] == 'python':
-            ret = python(args)
-        elif tokens[0] == 'python-ref':
-            ret = pythonref(args, genref)
-
-        # uncapture stdout
-        sys.stdout = old_stdout
-
-        if ret == -1:
-            print "Invalid file %s: invalid instruction '%s' in line #%d: '%s'" % (abspath, tokens[0], nLine, sLine)
-        elif ret:
-            print "FAILED"
-        else:
-            print "ok"
-
-        # if there was anything printed to stdout, print it nicely indented
-        if mystdout.getvalue():
-            for line in mystdout.getvalue().split('\n'):
-                print "   ", line.rstrip()
-
-        aggregate |= ret
+        # filter on tests
+        if tests and name not in tests:
+            continue
+        
+        aggregate |= run_test(instruction, name, args, genref)
     return aggregate
         
 if __name__ == "__main__":
