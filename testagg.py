@@ -37,7 +37,6 @@ def TimeoutProcess(procfunc, timeout):
         def kill(self):
             # kill with extreme prejudice
             os.killpg(os.getpgid(self.proc.pid), signal.SIGKILL)
-            #os.kill(self.proc.pid, signal.SIGKILL)
         def returncode(self):
             return self.proc.returncode
     return Timeout(Task(), timeout)
@@ -53,8 +52,9 @@ def run_cmd_ref(cmd, ref, genref, timeout):
             with open(ref, 'w') as out:
                 return subprocess.Popen(md, stdout = out)
         else:
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-            diff = subprocess.Popen(['diff', ref, '-'], stdin=proc.stdout, stdout=stdout, stderr=stderr)
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
+            diff = subprocess.Popen(['diff', ref, '-'], stdin=proc.stdout, stdout=stdout, stderr=stderr, 
+                                    preexec_fn=lambda: os.setpgid(0, proc.pid))
             proc.stdout.close()
             return diff
     return TimeoutProcess(Proc, timeout)
