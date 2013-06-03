@@ -66,10 +66,10 @@ def run_python(args, timeout):
 def run_python_ref(args, genref, timeout):
     # get first token; it must be the python script Name
     script = args[0]
-    # compute the ref file name, must be same as python script name except .ref instead of .py
-    ref = os.path.splitext(script)[0] + ".ref"
+    # ref file name must be same as python script name except add .ref
+    ref = script + '.ref'
     # generate command to run the python script and compare output to the ref file
-    cmd = [sys.executable] + args + ['|', 'diff', ref, '-']
+    cmd = [sys.executable] + args #+ ['|', 'diff', ref, '-']
     if genref:
         print "GENERATING REF",
     return run_cmd_ref(cmd, ref, genref, timeout)
