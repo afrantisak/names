@@ -27,7 +27,7 @@ def Timeout(task, seconds):
         task.kill()
     return task.returncode()
     
-def TimeoutProc(procfunc, timeout):
+def TimeoutProcess(procfunc, timeout):
     class Task():
         def run(self):
             self.proc = procfunc(subprocess.PIPE, None, subprocess.STDOUT)
@@ -36,33 +36,34 @@ def TimeoutProc(procfunc, timeout):
                 print out.rstrip()
         def kill(self):
             # kill with extreme prejudice
-            os.killpg(os.getpgid(self.proc.pid), signal.SIGHUP)            
+            os.killpg(os.getpgid(self.proc.pid), signal.SIGKILL)
+            #os.kill(self.proc.pid, signal.SIGKILL)
         def returncode(self):
             return self.proc.returncode
     return Timeout(Task(), timeout)
     
-def run_cmd(cmd, timeout = 20):
+def run_cmd(cmd, timeout):
     def Proc(stdout, stdin, stderr):
         return subprocess.Popen(cmd, stdout=stdout, stdin=stdin, stderr=stderr)
-    return TimeoutProc(Proc, timeout)
+    return TimeoutProcess(Proc, timeout)
 
-def run_cmd_ref(cmd, ref, genref, timeout = 20):
+def run_cmd_ref(cmd, ref, genref, timeout):
     def Proc(stdout, stdin, stderr):
         if genref:
             with open(ref, 'w') as out:
                 return subprocess.Popen(md, stdout = out)
         else:
-            proc = subprocess.Popen(cmd, stdout = subprocess.PIPE)
-            diff = subprocess.Popen(['diff', ref, '-'], stdin = proc.stdout, stdout=stdout, stderr=stderr)
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+            diff = subprocess.Popen(['diff', ref, '-'], stdin=proc.stdout, stdout=stdout, stderr=stderr)
             proc.stdout.close()
             return diff
-    return TimeoutProc(Proc, timeout)
+    return TimeoutProcess(Proc, timeout)
 
-def run_python(args):
+def run_python(args, timeout):
     cmd = [sys.executable] + args
-    return run_cmd(cmd)
+    return run_cmd(cmd, timeout)
     
-def run_python_ref(args, genref):
+def run_python_ref(args, genref, timeout):
     # get first token; it must be the python script Name
     script = args[0]
     # compute the ref file name, must be same as python script name except .ref instead of .py
@@ -71,9 +72,9 @@ def run_python_ref(args, genref):
     cmd = [sys.executable] + args + ['|', 'diff', ref, '-']
     if genref:
         print "GENERATING REF",
-    return run_cmd_ref(cmd, ref, genref)
+    return run_cmd_ref(cmd, ref, genref, timeout)
     
-def run_test(instruction, name, args, genref):
+def run_test(instruction, name, args, genref, timeout):
     print name,
     sys.stdout.flush()
     
@@ -84,9 +85,9 @@ def run_test(instruction, name, args, genref):
     # run the job
     ret = -1
     if instruction == 'python':
-        ret = run_python([name] + args)
+        ret = run_python([name] + args, timeout)
     elif instruction == 'python-ref':
-        ret = run_python_ref([name] + args, genref)
+        ret = run_python_ref([name] + args, genref, timeout)
 
     # uncapture stdout
     sys.stdout = old_stdout
@@ -103,9 +104,11 @@ def run_test(instruction, name, args, genref):
         for line in mystdout.getvalue().split('\n'):
             print "   ", line.rstrip()
             
+    if ret is None:
+        return 127
     return ret
         
-def run(testfilename, tests, genref):
+def run(testfilename, tests, genref, timeout):
     abspath = os.path.abspath(testfilename)
     aggregate = 0
     for tokens, nLine, sLine in configfile(open(abspath, 'r')):
@@ -121,7 +124,7 @@ def run(testfilename, tests, genref):
         if tests and name not in tests:
             continue
         
-        aggregate |= run_test(instruction, name, args, genref)
+        aggregate |= run_test(instruction, name, args, genref, timeout)
     return aggregate
         
 if __name__ == "__main__":
@@ -133,6 +136,8 @@ if __name__ == "__main__":
                         help="run these tests only")
     parser.add_argument('--genref', default=False, action='store_true',
                         help="(re)generate *.ref files for those tests that use them")
+    parser.add_argument('--deftimeout', type=float, default=20,
+                        help="default timeout in seconds")
     args = parser.parse_args()
     
-    sys.exit(run(args.tstfile, args.tests, args.genref))
+    sys.exit(run(args.tstfile, args.tests, args.genref, args.deftimeout))
