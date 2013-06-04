@@ -43,12 +43,13 @@ def run(server_addresses):
         if not msg_recv:
             break  # Interrupted
         
-        assert len(msg_recv) >= 1
+        assert msg_recv[0] == peers.protocol
+        msg_recv = msg_recv[1:]
 
         # parse message
         sequence = msg_recv[0]
         msg_recv = msg_recv[1:]
-        msg_send = [sequence]
+        msg_send = [peers.protocol, sequence]
 
         if len(msg_recv) == 0:
             # key not set, it is a request all

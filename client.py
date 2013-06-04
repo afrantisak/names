@@ -5,6 +5,7 @@ import collections
 
 class Client(object):
     def __init__(self, server_addresses, timeout = 2.5):
+        self.protocol = 'names0.1'
         self.server_addresses = server_addresses
         self.timeout = timeout
         self.sequence = 0
@@ -23,7 +24,7 @@ class Client(object):
         
     def send(self, msg):
         self.sequence += 1
-        msg = ['', str(self.sequence)] + msg
+        msg = ['', self.protocol, str(self.sequence)] + msg
         # Blast the request to all connected servers
         for server in xrange(len(self.server_addresses)):
             self.socket.send_multipart(msg)
@@ -36,7 +37,8 @@ class Client(object):
             socks = dict(self.poll.poll((endtime - time.time())))
             if socks.get(self.socket) == zmq.POLLIN:
                 msg = self.socket.recv_multipart()
-                assert len(msg) >= 2
+                assert msg[1] == self.protocol
+                msg = msg[1:]
                 sequence = int(msg[1])
                 if sequence == self.sequence:
                     resp = validfunc(msg[2:])
