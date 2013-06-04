@@ -61,7 +61,7 @@ class Client(object):
         # send it to all servers
         seq = self.send(msg)
         
-        # this function conglomer
+        # this function makes sure we got answers for all of our questions
         def validfunc(response):
             for request in requests:
                 if request not in response:

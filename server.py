@@ -6,9 +6,6 @@ import client
 def run(server_addresses):
     context = zmq.Context()
     
-    # data map
-    values = collections.defaultdict(set)
-
     # the first address is us
     server = context.socket(zmq.REP)
     server.bind(server_addresses[0])
@@ -20,10 +17,8 @@ def run(server_addresses):
     msg = []
     seq = peers.send(msg)
         
-    # wait to get as many repsonses we can before the timeout
-    reply, valid = peers.recv(seq, lambda response: response)
-    if valid:
-        values = reply
+    # wait to get as many repsonses as we can before the timeout
+    values, valid = peers.recv(seq, lambda response: False)
 
     print "Server:", server_addresses[0]
 
