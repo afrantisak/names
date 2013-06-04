@@ -20,13 +20,9 @@ def run(server_addresses):
     msg = []
     seq = peers.send(msg)
         
-    # this function accepts the first response
-    def validfunc(response):
-        return response
-
-    # wait (with timeout) for the first response that matches the sequence number
-    reply = peers.recv(seq, validfunc)
-    if reply:
+    # wait to get as many repsonses we can before the timeout
+    reply, valid = peers.recv(seq, lambda response: response)
+    if valid:
         values = reply
 
     print "Server:", server_addresses[0]

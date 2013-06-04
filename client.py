@@ -50,8 +50,8 @@ class Client(object):
                             union[key].add(value)
                     resp = validfunc(union)
                     if resp:
-                        return resp
-        return None
+                        return union, True
+        return union, False
 
     def request(self, requests):
         msg = []
@@ -69,8 +69,8 @@ class Client(object):
             return response
 
         # wait (with timeout) for the first response that matches the sequence number
-        reply = self.recv(seq, validfunc)
-        if reply:
+        reply, valid = self.recv(seq, validfunc)
+        if valid:
             return reply
         
 if __name__ == "__main__":
