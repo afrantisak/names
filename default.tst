@@ -3,3 +3,4 @@ python-ref test/basic.py
 python-ref test/basic3.py
 python-ref test/death.py
 python-ref test/multreq.py
+python-ref test/latejoin.py

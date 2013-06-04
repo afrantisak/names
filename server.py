@@ -12,7 +12,6 @@ def run(server_addresses):
     # the first address is us
     server = context.socket(zmq.REP)
     server.bind(server_addresses[0])
-    print "Server:", server_addresses[0]
 
     # the rest are peers
     peers = client.Client(server_addresses[1:])
@@ -36,6 +35,8 @@ def run(server_addresses):
     reply = peers.recv(seq, validfunc)
     if reply:
         values = reply
+
+    print "Server:", server_addresses[0]
 
     while True:
         # wait for a message
