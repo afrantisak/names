@@ -21,14 +21,7 @@ def run(server_addresses):
     seq = peers.send(msg)
         
     # this function accepts the first response
-    response = collections.defaultdict(set)
-    def validfunc(data):
-        while len(data):
-            key = data[0]
-            value = data[1]
-            data = data[2:]
-            if value:
-                response[key].add(value)
+    def validfunc(response):
         return response
 
     # wait (with timeout) for the first response that matches the sequence number

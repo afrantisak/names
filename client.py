@@ -32,16 +32,23 @@ class Client(object):
             
     def recv(self, sequence, validfunc):
         # wait (with timeout) for responses that match the sequence number until validfunc returns valid dict
+        union = collections.defaultdict(set)
         endtime = time.time() + self.timeout
         while time.time() < endtime:
             socks = dict(self.poll.poll((endtime - time.time())))
             if socks.get(self.socket) == zmq.POLLIN:
                 msg = self.socket.recv_multipart()
                 assert msg[1] == self.protocol
-                msg = msg[1:]
-                sequence = int(msg[1])
+                sequence = int(msg[2])
+                msg = msg[3:]
                 if sequence == self.sequence:
-                    resp = validfunc(msg[2:])
+                    while len(msg):
+                        key = msg[0]
+                        value = msg[1]
+                        msg = msg[2:]
+                        if value:
+                            union[key].add(value)
+                    resp = validfunc(union)
                     if resp:
                         return resp
         return None
@@ -55,14 +62,7 @@ class Client(object):
         seq = self.send(msg)
         
         # this function conglomer
-        response = collections.defaultdict(set)
-        def validfunc(data):
-            while len(data):
-                key = data[0]
-                value = data[1]
-                data = data[2:]
-                if value:
-                    response[key].add(value)
+        def validfunc(response):
             for request in requests:
                 if request not in response:
                     return None
