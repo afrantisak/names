@@ -84,7 +84,11 @@ def run_test(instruction, name, args, genref, timeout):
 
     # run the job
     ret = -1
-    if instruction == 'python':
+    if instruction == 'cmd':
+        ret = run_cmd([name] + args, timeout)
+    elif instruction == 'cmd-ref':
+        ret = run_cmd_ref([name] + args, timeout)
+    elif instruction == 'python':
         ret = run_python([name] + args, timeout)
     elif instruction == 'python-ref':
         ret = run_python_ref([name] + args, genref, timeout)
