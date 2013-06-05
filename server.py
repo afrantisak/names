@@ -2,6 +2,13 @@ import sys
 import zmq
 import collections
 import client
+import logging
+
+import logging
+logging.basicConfig(
+    filename='names_server.log',
+    level=logging.INFO,
+    format='%(asctime)s.%(msecs)03d %(process)X %(thread)X %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 def run(server_addresses):
     context = zmq.Context()
@@ -29,6 +36,7 @@ def run(server_addresses):
         if not msg_recv:
             break  # Interrupted
         
+        msg_recv_orig = msg_recv    
         assert msg_recv[0] == peers.protocol
         msg_recv = msg_recv[1:]
 
@@ -61,6 +69,9 @@ def run(server_addresses):
                         msg_send += [key, value]
                 else:
                     msg_send += [key, '']
+        
+        logging.info(str(msg_recv_orig) + " -> " + str(msg_send))
+        
         server.send_multipart(msg_send)
 
     server.setsockopt(zmq.LINGER, 0)  # Terminate early
