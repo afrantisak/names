@@ -2,7 +2,7 @@ language: python
 python:
   - "2.7"
 
-install: pip install pyzmq
+install: pip install pyzmq pyyaml
 
 script:  python testagg.py
     

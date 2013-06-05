@@ -1,6 +1,6 @@
-# run basic.py and compare output to basic.ref
-python-ref test/basic.py
-python-ref test/basic3.py
-python-ref test/death.py
-python-ref test/multreq.py
-python-ref test/latejoin.py
+tests:
+    basic:      python-ref test/basic.py
+    basic3:     python-ref test/basic3.py
+    death:      python-ref test/death.py
+    multreq:    python-ref test/multreq.py
+    latejoin:   python-ref test/latejoin.py

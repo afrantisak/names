@@ -4,20 +4,8 @@ import datetime
 import threading
 import signal
 import cStringIO
+import yaml
 
-# TODO: use YAML or some other std file format reader
-
-def configfile(file):
-    nLine = 0
-    for line in file:
-        nLine += 1
-        if line and line[0] == '#':
-            continue
-        tokens = line.split()
-        if len(tokens) == 0:
-            continue
-        yield tokens, nLine, line.rstrip()
-        
 def Timeout(task, seconds):
     thread = threading.Thread(target=task.run)
     thread.start()
@@ -115,20 +103,21 @@ def run_test(instruction, name, args, genref, timeout):
 def run(testfilename, tests, genref, timeout):
     abspath = os.path.abspath(testfilename)
     aggregate = 0
-    for tokens, nLine, sLine in configfile(open(abspath, 'r')):
-        if len(tokens) < 2:
-            print "Invalid file %s: must have at least 2 tokens in line #%d: '%s'" % (abspath, nLine, sLine)
-            return 1
+    data = yaml.safe_load(open(abspath, 'r'))
+    if 'global' in data:
+        if 'cwd' in data['global']:
+            os.chdir(data['global']['cwd'])
+    if 'tests' in data:
+        for key, value in data['tests'].iteritems():
+            tokens = value.split()
+            instruction = tokens[0]
+            name = tokens[1]
+            args = tokens[2:]
+            
+            if tests and key not in tests:
+                continue
         
-        instruction = tokens[0]
-        name = tokens[1]
-        args = tokens[2:]
-
-        # filter on tests
-        if tests and name not in tests:
-            continue
-        
-        aggregate |= run_test(instruction, name, args, genref, timeout)
+            aggregate |= run_test(instruction, name, args, genref, timeout)
     return aggregate
         
 if __name__ == "__main__":
