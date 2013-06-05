@@ -21,6 +21,7 @@ def run(server_addresses):
     values, valid = peers.recv(seq, lambda response: False)
 
     print "Server:", server_addresses[0]
+    sys.stdout.flush()
 
     while True:
         # wait for a message
