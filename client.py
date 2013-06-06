@@ -4,8 +4,9 @@ import zmq
 import collections
 
 class Client(object):
+    protocol = 'didi01'
+    empty = collections.defaultdict(set)
     def __init__(self, server_addresses, timeout = 2.5):
-        self.protocol = 'names0.1'
         self.server_addresses = server_addresses
         self.timeout = timeout
         self.sequence = 0
@@ -24,21 +25,21 @@ class Client(object):
         
     def send(self, msg):
         self.sequence += 1
-        msg = ['', self.protocol, str(self.sequence)] + msg
-        # Blast the request to all connected servers
+        msg = ['', Client.protocol, str(self.sequence)] + msg
+        # send the request to all connected servers
         for server in xrange(len(self.server_addresses)):
             self.socket.send_multipart(msg)
         return self.sequence
             
     def recv(self, sequence, validfunc):
         # wait (with timeout) for responses that match the sequence number until validfunc returns valid dict
-        union = collections.defaultdict(set)
+        union = Client.empty
         endtime = time.time() + self.timeout
         while time.time() < endtime:
             socks = dict(self.poll.poll((endtime - time.time())))
             if socks.get(self.socket) == zmq.POLLIN:
                 msg = self.socket.recv_multipart()
-                assert msg[1] == self.protocol
+                assert msg[1] == Client.protocol
                 sequence = int(msg[2])
                 msg = msg[3:]
                 if sequence == self.sequence:

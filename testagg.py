@@ -34,11 +34,13 @@ def run_cmd(cmd, timeout):
         return subprocess.Popen(cmd, stdout=stdout, stdin=stdin, stderr=stderr, preexec_fn=os.setpgrp)
     return TimeoutProcess(Proc, timeout)
 
-def run_cmd_ref(cmd, ref, genref, timeout):
+def run_cmd_ref(cmd, ref, genref, noref, timeout):
     def Proc(stdout, stdin, stderr):
         if genref:
             with open(ref, 'w') as out:
                 return subprocess.Popen(cmd, stdout = out, preexec_fn=os.setpgrp)
+        elif noref:
+            return subprocess.Popen(cmd, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
         else:
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
             diff = subprocess.Popen(['diff', ref, '-'], stdin=proc.stdout, stdout=stdout, stderr=stderr, 
@@ -51,7 +53,7 @@ def run_python(args, timeout):
     cmd = [sys.executable] + args
     return run_cmd(cmd, timeout)
     
-def run_python_ref(args, genref, timeout):
+def run_python_ref(args, genref, noref, timeout):
     # get first token; it must be the python script Name
     script = args[0]
     # ref file name must be same as python script name except add .ref
@@ -60,9 +62,9 @@ def run_python_ref(args, genref, timeout):
     cmd = [sys.executable] + args #+ ['|', 'diff', ref, '-']
     if genref:
         print "GENERATING REF",
-    return run_cmd_ref(cmd, ref, genref, timeout)
+    return run_cmd_ref(cmd, ref, genref, noref, timeout)
     
-def run_test(instruction, name, args, genref, timeout):
+def run_test(instruction, name, args, genref, noref, timeout):
     print name,
     sys.stdout.flush()
     
@@ -75,11 +77,11 @@ def run_test(instruction, name, args, genref, timeout):
     if instruction == 'cmd':
         ret = run_cmd([name] + args, timeout)
     elif instruction == 'cmd-ref':
-        ret = run_cmd_ref([name] + args, timeout)
+        ret = run_cmd_ref([name] + args, genref, noref, timeout)
     elif instruction == 'python':
         ret = run_python([name] + args, timeout)
     elif instruction == 'python-ref':
-        ret = run_python_ref([name] + args, genref, timeout)
+        ret = run_python_ref([name] + args, genref, noref, timeout)
 
     # uncapture stdout
     sys.stdout = old_stdout
@@ -100,7 +102,7 @@ def run_test(instruction, name, args, genref, timeout):
         return 127
     return ret
         
-def run(testfilename, tests, genref, timeout):
+def run(testfilename, tests, genref, noref, timeout):
     abspath = os.path.abspath(testfilename)
     aggregate = 0
     data = yaml.safe_load(open(abspath, 'r'))
@@ -117,7 +119,7 @@ def run(testfilename, tests, genref, timeout):
             if tests and key not in tests:
                 continue
         
-            aggregate |= run_test(instruction, name, args, genref, timeout)
+            aggregate |= run_test(instruction, name, args, genref, noref, timeout)
     return aggregate
         
 if __name__ == "__main__":
@@ -129,8 +131,10 @@ if __name__ == "__main__":
                         help="run these tests only")
     parser.add_argument('--genref', default=False, action='store_true',
                         help="(re)generate *.ref files for those tests that use them")
+    parser.add_argument('--noref', default=False, action='store_true',
+                        help="do not compare to ref files for those tests that use them")
     parser.add_argument('--deftimeout', type=float, default=20,
                         help="default timeout in seconds")
     args = parser.parse_args()
     
-    sys.exit(run(args.tstfile, args.tests, args.genref, args.deftimeout))
+    sys.exit(run(args.tstfile, args.tests, args.genref, args.noref, args.deftimeout))
