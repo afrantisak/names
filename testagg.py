@@ -19,14 +19,19 @@ def TimeoutProcess(procfunc, timeout):
     class Task():
         def run(self):
             self.proc = procfunc(subprocess.PIPE, None, subprocess.STDOUT)
-            out = self.proc.communicate()[0]
-            if out:
-                print out.rstrip()
+            if self.proc:
+                out = self.proc.communicate()[0]
+                if out:
+                    print out.rstrip()
         def kill(self):
-            # kill with extreme prejudice
-            os.killpg(os.getpgid(self.proc.pid), signal.SIGKILL)
+            if self.proc:
+                # kill with extreme prejudice
+                os.killpg(os.getpgid(self.proc.pid), signal.SIGKILL)
         def returncode(self):
-            return self.proc.returncode
+            if self.proc:
+                return self.proc.returncode
+            else:
+                return 1
     return Timeout(Task(), timeout)
     
 def run_cmd(cmd, timeout):
@@ -42,6 +47,9 @@ def run_cmd_ref(cmd, ref, genref, noref, timeout):
         elif noref:
             return subprocess.Popen(cmd, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
         else:
+            if not os.path.exists(ref):
+                print "Ref file does not exist: %s" % ref
+                return None
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
             diff = subprocess.Popen(['diff', ref, '-'], stdin=proc.stdout, stdout=stdout, stderr=stderr, 
                                     preexec_fn=lambda: os.setpgid(0, proc.pid))
@@ -110,6 +118,7 @@ def run(testfilename, tests, genref, noref, timeout):
         if 'cwd' in data['global']:
             os.chdir(data['global']['cwd'])
     if 'tests' in data:
+        found = 0
         for key, value in data['tests'].iteritems():
             tokens = value.split()
             instruction = tokens[0]
@@ -120,6 +129,9 @@ def run(testfilename, tests, genref, noref, timeout):
                 continue
         
             aggregate |= run_test(instruction, name, args, genref, noref, timeout)
+            found += 1
+        if not found:
+            print "No tests found"
     return aggregate
         
 if __name__ == "__main__":

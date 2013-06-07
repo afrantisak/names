@@ -5,9 +5,7 @@ import client
 import logging
 
 import logging
-logging.basicConfig(
-    filename='didi_server.log',
-    level=logging.INFO,
+logging.basicConfig(filename='didi_server.log', level=logging.INFO,
     format='%(asctime)s.%(msecs)03d %(process)X %(thread)X %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 def run(server_addresses):
@@ -66,10 +64,13 @@ def run(server_addresses):
                 value = msg_recv[1]
                 msg_recv = msg_recv[2:]
 
-                # if value is set, then it is a psh
+                # if value is set, then it is a push
                 if value:
                     # store value and sync
-                    values[key].add(value)
+                    if value == '_':
+                        values[key].remove(value)
+                    else:
+                        values[key].add(value)
                     for value in values[key]:
                         msg_send += [key, value]
                 else: # it is a request

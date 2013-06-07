@@ -4,3 +4,4 @@ tests:
     death:      python-ref test/death.py
     multreq:    python-ref test/multreq.py
     latejoin:   python-ref test/latejoin.py
+    remove:     python-ref test/remove.py
