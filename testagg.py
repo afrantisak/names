@@ -39,17 +39,22 @@ def run_cmd(cmd, timeout):
         return subprocess.Popen(cmd, stdout=stdout, stdin=stdin, stderr=stderr, preexec_fn=os.setpgrp)
     return TimeoutProcess(Proc, timeout)
 
-def run_cmd_ref(cmd, ref, genref, noref, timeout):
+def run_cmd_ref(cmd, ref, refop, timeout):
     def Proc(stdout, stdin, stderr):
-        if genref:
+        if refop == 'gen':
+            print "GENERATING REF",
             with open(ref, 'w') as out:
                 return subprocess.Popen(cmd, stdout = out, preexec_fn=os.setpgrp)
-        elif noref:
+        elif refop == 'ignore':
             return subprocess.Popen(cmd, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
         else:
             if not os.path.exists(ref):
                 print "Ref file does not exist: %s" % ref
                 return None
+            if refop == 'dump':
+                for line in open(ref, 'r'):
+                    print line.rstrip()
+                return 0
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
             diff = subprocess.Popen(['diff', ref, '-'], stdin=proc.stdout, stdout=stdout, stderr=stderr, 
                                     preexec_fn=lambda: os.setpgid(0, proc.pid))
@@ -61,18 +66,16 @@ def run_python(args, timeout):
     cmd = [sys.executable] + args
     return run_cmd(cmd, timeout)
     
-def run_python_ref(args, genref, noref, timeout):
+def run_python_ref(args, refop, timeout):
     # get first token; it must be the python script Name
     script = args[0]
     # ref file name must be same as python script name except add .ref
     ref = script + '.ref'
     # generate command to run the python script and compare output to the ref file
     cmd = [sys.executable] + args #+ ['|', 'diff', ref, '-']
-    if genref:
-        print "GENERATING REF",
-    return run_cmd_ref(cmd, ref, genref, noref, timeout)
+    return run_cmd_ref(cmd, ref, refop, timeout)
     
-def run_test(instruction, name, args, genref, noref, timeout):
+def run_test(instruction, name, args, refop, timeout):
     print name,
     sys.stdout.flush()
     
@@ -85,11 +88,11 @@ def run_test(instruction, name, args, genref, noref, timeout):
     if instruction == 'cmd':
         ret = run_cmd([name] + args, timeout)
     elif instruction == 'cmd-ref':
-        ret = run_cmd_ref([name] + args, genref, noref, timeout)
+        ret = run_cmd_ref([name] + args, refop, timeout)
     elif instruction == 'python':
         ret = run_python([name] + args, timeout)
     elif instruction == 'python-ref':
-        ret = run_python_ref([name] + args, genref, noref, timeout)
+        ret = run_python_ref([name] + args, refop, timeout)
 
     # uncapture stdout
     sys.stdout = old_stdout
@@ -110,7 +113,7 @@ def run_test(instruction, name, args, genref, noref, timeout):
         return 127
     return ret
         
-def run(testfilename, tests, genref, noref, timeout):
+def run(testfilename, tests, refop, timeout):
     abspath = os.path.abspath(testfilename)
     aggregate = 0
     data = yaml.safe_load(open(abspath, 'r'))
@@ -128,7 +131,7 @@ def run(testfilename, tests, genref, noref, timeout):
             if tests and key not in tests:
                 continue
         
-            aggregate |= run_test(instruction, name, args, genref, noref, timeout)
+            aggregate |= run_test(instruction, name, args, refop, timeout)
             found += 1
         if not found:
             print "No tests found"
@@ -141,12 +144,10 @@ if __name__ == "__main__":
                         help="tst filename")
     parser.add_argument('tests', nargs='?',
                         help="run these tests only")
-    parser.add_argument('--genref', default=False, action='store_true',
-                        help="(re)generate *.ref files for those tests that use them")
-    parser.add_argument('--noref', default=False, action='store_true',
-                        help="do not compare to ref files for those tests that use them")
+    parser.add_argument('--ref', choices=['gen', 'ignore', 'dump'],
+                        help="ref file operations")
     parser.add_argument('--deftimeout', type=float, default=20,
                         help="default timeout in seconds")
     args = parser.parse_args()
     
-    sys.exit(run(args.tstfile, args.tests, args.genref, args.noref, args.deftimeout))
+    sys.exit(run(args.tstfile, args.tests, args.ref, args.deftimeout))
