@@ -34,6 +34,8 @@ def TimeoutProcess(procfunc, timeout):
         def returncode(self):
             if self.proc:
                 return self.proc.returncode
+            elif self.proc == 0:
+                return 0
             else:
                 return 1
     return Timeout(Task(), timeout)
@@ -46,7 +48,7 @@ def run_cmd(cmd, timeout):
 def run_cmd_ref(cmd, ref, refop, timeout):
     def Proc(stdout, stdin, stderr):
         if refop == 'gen':
-            print "GENERATING REF",
+            print "Generating %s" % ref,
             with open(ref, 'w') as out:
                 return subprocess.Popen(cmd, stdout = out, preexec_fn=os.setpgrp)
         elif refop == 'ignore':
@@ -151,8 +153,8 @@ if __name__ == "__main__":
                         help="tst filename")
     parser.add_argument('tests', nargs='?',
                         help="run these tests only")
-    parser.add_argument('--ref', choices=['gen', 'ignore', 'dump'],
-                        help="ref file operations")
+    parser.add_argument('--ref', choices=['cmp', 'gen', 'ignore', 'dump'], default='cmp',
+                        help="ref file operations (default=cmp)")
     parser.add_argument('--deftimeout', type=float, default=20,
                         help="default timeout in seconds")
     args = parser.parse_args()
