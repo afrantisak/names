@@ -21,7 +21,11 @@ def TimeoutProcess(procfunc, timeout):
             self.proc = procfunc(subprocess.PIPE, None, subprocess.STDOUT)
             if self.proc:
                 out = self.proc.communicate()[0]
-                if out:
+                if hasattr(self.proc, 'postprocess'):
+                    out = out.split('\n')[:-1]
+                    out = [line + '\n' for line in out]
+                    self.proc.postprocess(out)
+                elif out:
                     print out.rstrip()
         def kill(self):
             if self.proc:
@@ -56,10 +60,13 @@ def run_cmd_ref(cmd, ref, refop, timeout):
                     print line.rstrip()
                 return 0
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
-            diff = subprocess.Popen(['diff', ref, '-'], stdin=proc.stdout, stdout=stdout, stderr=stderr, 
-                                    preexec_fn=lambda: os.setpgid(0, proc.pid))
-            proc.stdout.close()
-            return diff
+            def postprocess(out):
+                import difflib
+                diff = difflib.context_diff(open(ref, 'r').readlines(), out, "Expected", "Actual", n=2)
+                for line in diff:
+                    print line.rstrip()
+            proc.postprocess = postprocess
+            return proc
     return TimeoutProcess(Proc, timeout)
 
 def run_python(args, timeout):
@@ -72,7 +79,7 @@ def run_python_ref(args, refop, timeout):
     # ref file name must be same as python script name except add .ref
     ref = script + '.ref'
     # generate command to run the python script and compare output to the ref file
-    cmd = [sys.executable] + args #+ ['|', 'diff', ref, '-']
+    cmd = [sys.executable] + args
     return run_cmd_ref(cmd, ref, refop, timeout)
     
 def run_test(instruction, name, args, refop, timeout):
