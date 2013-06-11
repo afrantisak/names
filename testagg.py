@@ -84,7 +84,7 @@ def run_python_ref(args, refop, timeout):
     cmd = [sys.executable] + args
     return run_cmd_ref(cmd, ref, refop, timeout)
     
-def run_test(instruction, name, args, refop, timeout):
+def run_test(name, instruction, cmd, refop, timeout, options):
     print name,
     sys.stdout.flush()
     
@@ -92,16 +92,16 @@ def run_test(instruction, name, args, refop, timeout):
     old_stdout = sys.stdout
     sys.stdout = mystdout = cStringIO.StringIO()
 
+    ref = name + ".ref"
+    if 'refdir' in options:
+        ref = os.path.join(options['refdir'], ref)
+    
     # run the job
     ret = -1
     if instruction == 'cmd':
-        ret = run_cmd([name] + args, timeout)
-    elif instruction == 'cmd-ref':
-        ret = run_cmd_ref([name] + args, refop, timeout)
-    elif instruction == 'python':
-        ret = run_python([name] + args, timeout)
-    elif instruction == 'python-ref':
-        ret = run_python_ref([name] + args, refop, timeout)
+        ret = run_cmd(cmd, timeout)
+    elif instruction == 'ref':
+        ret = run_cmd_ref(cmd, ref, refop, timeout)
 
     # uncapture stdout
     sys.stdout = old_stdout
@@ -126,21 +126,20 @@ def run(testfilename, tests, refop, timeout):
     abspath = os.path.abspath(testfilename)
     aggregate = 0
     data = yaml.safe_load(open(abspath, 'r'))
+    options = {}
     if 'global' in data:
-        if 'cwd' in data['global']:
-            os.chdir(data['global']['cwd'])
+        options = data['global']
     if 'tests' in data:
         found = 0
         for key, value in data['tests'].iteritems():
             tokens = value.split()
             instruction = tokens[0]
-            name = tokens[1]
-            args = tokens[2:]
+            cmd = tokens[1:]
             
             if tests and key not in tests:
                 continue
         
-            aggregate |= run_test(instruction, name, args, refop, timeout)
+            aggregate |= run_test(key, instruction, cmd, refop, timeout, options)
             found += 1
         if not found:
             print "No tests found"
