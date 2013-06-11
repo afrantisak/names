@@ -1,10 +1,8 @@
-global:
-    refdir: test
-    
 tests:
-    basic:      ref python test/basic.py
-    basic3:     ref python test/basic3.py
-    death:      ref python test/death.py
-    multreq:    ref python test/multreq.py
-    latejoin:   ref python test/latejoin.py
-    remove:     ref python test/remove.py
+    test:
+        basic:      ref python basic.py
+        basic3:     ref python basic3.py
+        death:      ref python death.py
+        multreq:    ref python multreq.py
+        latejoin:   ref python latejoin.py
+        remove:     ref python remove.py

@@ -71,19 +71,6 @@ def run_cmd_ref(cmd, ref, refop, timeout):
             return proc
     return TimeoutProcess(Proc, timeout)
 
-def run_python(args, timeout):
-    cmd = [sys.executable] + args
-    return run_cmd(cmd, timeout)
-    
-def run_python_ref(args, refop, timeout):
-    # get first token; it must be the python script Name
-    script = args[0]
-    # ref file name must be same as python script name except add .ref
-    ref = script + '.ref'
-    # generate command to run the python script and compare output to the ref file
-    cmd = [sys.executable] + args
-    return run_cmd_ref(cmd, ref, refop, timeout)
-    
 def run_test(name, instruction, cmd, refop, timeout, options):
     print name,
     sys.stdout.flush()
@@ -121,28 +108,40 @@ def run_test(name, instruction, cmd, refop, timeout, options):
     if ret is None:
         return 127
     return ret
+    
+def recurse(data, tests, refop, timeout, options):
+    aggregate = 0
+    found = 0
+    for key, value in data.iteritems():
+        if type(value) == dict:
+            os.chdir(key)
+            agg, found = recurse(value, tests, refop, timeout, options)
+            aggregate |= agg
+            found += found
+            continue
+        tokens = value.split()
+        instruction = tokens[0]
+        cmd = tokens[1:]
         
+        if tests and key not in tests:
+            continue
+    
+        aggregate |= run_test(key, instruction, cmd, refop, timeout, options)
+        found += 1
+    return aggregate, found
+    
 def run(testfilename, tests, refop, timeout):
     abspath = os.path.abspath(testfilename)
     aggregate = 0
+    found = 0
     data = yaml.safe_load(open(abspath, 'r'))
     options = {}
     if 'global' in data:
         options = data['global']
     if 'tests' in data:
-        found = 0
-        for key, value in data['tests'].iteritems():
-            tokens = value.split()
-            instruction = tokens[0]
-            cmd = tokens[1:]
-            
-            if tests and key not in tests:
-                continue
-        
-            aggregate |= run_test(key, instruction, cmd, refop, timeout, options)
-            found += 1
-        if not found:
-            print "No tests found"
+        aggregate, found = recurse(data['tests'], tests, refop, timeout, options)
+    if not found:
+        print "No tests found"
     return aggregate
         
 if __name__ == "__main__":

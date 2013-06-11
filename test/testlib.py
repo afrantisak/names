@@ -26,7 +26,7 @@ class Servers():
         self.servers = []
         for index in xrange(len(addresses)):
             rotated = addresses[index:] + addresses[:index]
-            cmd = python(['server.py'] + rotated)
+            cmd = python(['../server.py'] + rotated)
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             proc.address = addresses[index]
             self.servers.append(proc)
@@ -36,7 +36,7 @@ class Servers():
         self.servers[index].kill()
     def restart(self, index):
         rotated = self.addresses[index:] + self.addresses[:index]
-        self.servers[index] = subprocess.Popen(python(['server.py'] + rotated))
+        self.servers[index] = subprocess.Popen(python(['../server.py'] + rotated))
         time.sleep(3)
     def __enter__(self):
         return self
@@ -46,7 +46,7 @@ class Servers():
                 server.kill()
             
 def Client(args, addresses):
-    os.system(cmdstr(python(['client.py'] + args + addresses)))
+    os.system(cmdstr(python(['../client.py'] + args + addresses)))
     
 def BasicTest(addresses):
     with Servers(addresses) as servers:
