@@ -1,4 +1,12 @@
 Client: tcp://127.0.0.1:8000
-defaultdict(<type 'set'>, {'zxcv': set(['uiop']), 'asdf': set(['qwer'])})
+received:
+    zxcv:
+        uiop
+    asdf:
+        qwer
 Client: tcp://127.0.0.1:8000
-defaultdict(<type 'set'>, {'zxcv': set(['uiop']), 'asdf': set(['qwer'])})
+received:
+    zxcv:
+        uiop
+    asdf:
+        qwer

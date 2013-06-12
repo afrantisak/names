@@ -73,6 +73,16 @@ class Client(object):
         reply, valid = self.recv(seq, validfunc)
         if valid:
             return reply
+            
+def tree(defaultdict):
+    if not defaultdict:
+        return "<none>"
+    s = ''
+    for k, v in defaultdict.iteritems():
+        s += '    ' + k + ":\n"
+        for value in v:
+            s += '        ' + value + "\n"
+    return s
         
 if __name__ == "__main__":
     import argparse
@@ -94,5 +104,7 @@ if __name__ == "__main__":
         for kvp in args.push:
             pair = kvp.split(':')
             requests[pair[0]] = pair[1]
-    print client.request(requests)
+    response = client.request(requests)
+    print "received:"
+    print tree(response),
     client.destroy()

@@ -1,10 +1,14 @@
 Client: tcp://127.0.0.1:8000
 Client: tcp://127.0.0.1:8001
-defaultdict(<type 'set'>, {'asdf': set(['qwer'])})
+received:
+    asdf:
+        qwer
 Scanning peers...
 Client: tcp://127.0.0.1:8001
 ...done
 Server: tcp://127.0.0.1:8000
 Client: tcp://127.0.0.1:8000
 Client: tcp://127.0.0.1:8001
-defaultdict(<type 'set'>, {'asdf': set(['qwer'])})
+received:
+    asdf:
+        qwer
