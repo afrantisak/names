@@ -21,6 +21,7 @@ def TimeoutProcess(procfunc, timeout):
             self.proc = procfunc(subprocess.PIPE, None, subprocess.STDOUT)
             if self.proc:
                 out = self.proc.communicate()[0]
+                # if it has a postprocess attribute, it is a function to process the output
                 if hasattr(self.proc, 'postprocess'):
                     out = out.split('\n')[:-1]
                     out = [line + '\n' for line in out]
@@ -43,7 +44,7 @@ def TimeoutProcess(procfunc, timeout):
 def testProcess(cmd, ref, refop, timeout):
     def Proc(stdout, stdin, stderr):
         if refop == 'gen':
-            print "Generating %s" % ref,
+            print "Generating ref file %s" % ref,
             with open(ref, 'w') as out:
                 return subprocess.Popen(cmd, stdout = out, preexec_fn=os.setpgrp)
         elif refop == 'ignore':
@@ -127,7 +128,7 @@ def recurse(data, tests, refop, timeout, options):
         found += 1
     return aggregate, found
     
-def run(testfilename, tests, refop, timeout):
+def parse(testfilename, tests, refop, timeout):
     abspath = os.path.abspath(testfilename)
     aggregate = 0
     found = 0
@@ -144,7 +145,7 @@ def run(testfilename, tests, refop, timeout):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="test runner")
-    parser.add_argument('--tstfile', default="default.tst",
+    parser.add_argument('--testfile', default="testagg.yml",
                         help="tst filename")
     parser.add_argument('tests', nargs='?',
                         help="run these tests only")
@@ -154,4 +155,4 @@ if __name__ == "__main__":
                         help="default timeout in seconds")
     args = parser.parse_args()
     
-    sys.exit(run(args.tstfile, args.tests, args.ref, args.deftimeout))
+    sys.exit(parse(args.testfile, args.tests, args.ref, args.deftimeout))
