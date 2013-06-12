@@ -2,11 +2,26 @@ import sys
 import zmq
 import collections
 import client
-import logging
 
 import logging
 logging.basicConfig(filename='nds_server.log', level=logging.INFO,
     format='%(asctime)s.%(msecs)03d %(process)X %(thread)X %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+class StdoutIndenter():
+    def __enter__(self):
+        # capture stdout
+        import cStringIO
+        self.old_stdout = sys.stdout
+        sys.stdout = self.mystdout = cStringIO.StringIO()
+
+    def __exit__(self, type, value, traceback):
+        # uncapture stdout
+        sys.stdout = self.old_stdout
+
+        # if there was anything printed to stdout, print it, nicely indented
+        if self.mystdout.getvalue():
+            for line in self.mystdout.getvalue().split('\n')[:-1]:
+                print "   ", line.rstrip()
 
 def run(server_addresses):
     context = zmq.Context()
@@ -19,20 +34,18 @@ def run(server_addresses):
 
     # the rest are peers
     if len(server_addresses) > 1:
-        print "Scanning peers..."
-        peers = client.Client(server_addresses[1:])
-        
-        # get initial dump from peers
-        msg = []
-        seq = peers.send(msg)
+        print "Querying peers:"
+        with StdoutIndenter():
+            peers = client.Client(server_addresses[1:])
             
-        # wait to get as many repsonses as we can before the timeout 
-        # (ignore valid flag - we know it will be false)
-        values, valid = peers.recv(seq, lambda response: False)
+            # request initial dump from all peers
+            seq = peers.send()
+                
+            # wait to get as many repsonses as we can before the timeout 
+            # (ignore valid flag - we know it will be false)
+            values, valid = peers.recv(seq, lambda response: False)
 
-        print "...done"
-        
-        # print our host address to console
+    # print our host address to console
     print "Server:", server_addresses[0]
     sys.stdout.flush()
 

@@ -23,7 +23,7 @@ class Client(object):
         self.socket.close()
         self.context.term()
         
-    def send(self, msg):
+    def send(self, msg = []): # default message is a request all
         self.sequence += 1
         msg = ['', Client.protocol, str(self.sequence)] + msg
         # send the request to all connected servers
