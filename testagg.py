@@ -40,12 +40,7 @@ def TimeoutProcess(procfunc, timeout):
                 return 1
     return Timeout(Task(), timeout)
     
-def run_cmd(cmd, timeout):
-    def Proc(stdout, stdin, stderr):
-        return subprocess.Popen(cmd, stdout=stdout, stdin=stdin, stderr=stderr, preexec_fn=os.setpgrp)
-    return TimeoutProcess(Proc, timeout)
-
-def run_cmd_ref(cmd, ref, refop, timeout):
+def testProcess(cmd, ref, refop, timeout):
     def Proc(stdout, stdin, stderr):
         if refop == 'gen':
             print "Generating %s" % ref,
@@ -71,7 +66,7 @@ def run_cmd_ref(cmd, ref, refop, timeout):
             return proc
     return TimeoutProcess(Proc, timeout)
 
-def run_test(name, instruction, cmd, refop, timeout, options):
+def test(name, instruction, cmd, refop, timeout, options):
     print name,
     sys.stdout.flush()
     
@@ -86,9 +81,9 @@ def run_test(name, instruction, cmd, refop, timeout, options):
     # run the job
     ret = -1
     if instruction == 'cmd':
-        ret = run_cmd(cmd, timeout)
+        ret = testProcess(cmd, '', 'ignore', timeout)
     elif instruction == 'ref':
-        ret = run_cmd_ref(cmd, ref, refop, timeout)
+        ret = testProcess(cmd, ref, refop, timeout)
 
     # uncapture stdout
     sys.stdout = old_stdout
@@ -114,10 +109,12 @@ def recurse(data, tests, refop, timeout, options):
     found = 0
     for key, value in data.iteritems():
         if type(value) == dict:
+            cwd = os.path.abspath(os.getcwd())
             os.chdir(key)
             agg, found = recurse(value, tests, refop, timeout, options)
             aggregate |= agg
             found += found
+            os.chdir(cwd)
             continue
         tokens = value.split()
         instruction = tokens[0]
@@ -126,7 +123,7 @@ def recurse(data, tests, refop, timeout, options):
         if tests and key not in tests:
             continue
     
-        aggregate |= run_test(key, instruction, cmd, refop, timeout, options)
+        aggregate |= test(key, instruction, cmd, refop, timeout, options)
         found += 1
     return aggregate, found
     
