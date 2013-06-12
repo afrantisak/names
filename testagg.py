@@ -47,7 +47,7 @@ def testProcess(cmd, ref, refop, timeout):
             print "Generating ref file %s" % ref,
             with open(ref, 'w') as out:
                 return subprocess.Popen(cmd, stdout = out, preexec_fn=os.setpgrp)
-        elif refop == 'ignore':
+        elif refop == 'none':
             return subprocess.Popen(cmd, stdout=subprocess.PIPE, preexec_fn=os.setpgrp)
         else:
             if not os.path.exists(ref):
@@ -82,7 +82,7 @@ def test(name, instruction, cmd, refop, timeout, options):
     # run the job
     ret = -1
     if instruction == 'cmd':
-        ret = testProcess(cmd, '', 'ignore', timeout)
+        ret = testProcess(cmd, '', 'none', timeout)
     elif instruction == 'ref':
         ret = testProcess(cmd, ref, refop, timeout)
 
@@ -149,7 +149,7 @@ if __name__ == "__main__":
                         help="test yaml filename")
     parser.add_argument('tests', nargs='?',
                         help="run these tests only")
-    parser.add_argument('--ref', choices=['cmp', 'gen', 'ignore', 'dump'], default='cmp',
+    parser.add_argument('--ref', choices=['cmp', 'gen', 'none', 'dump'], default='cmp',
                         help="ref file operations (default=cmp)")
     parser.add_argument('--deftimeout', type=float, default=20,
                         help="default timeout in seconds")

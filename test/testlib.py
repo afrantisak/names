@@ -53,6 +53,3 @@ def BasicTest(addresses):
         Client(['--request=asdf'], addresses)
         Client(['--push=asdf:qwer'], addresses)
         Client(['--request=asdf'], addresses)
-
-    
-

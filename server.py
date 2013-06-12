@@ -66,11 +66,13 @@ def run(server_addresses):
 
                 # if value is set, then it is a push
                 if value:
-                    # store value and sync
-                    if value == '_':
-                        values[key].remove(value)
+                    # store or remove value
+                    if value[0] == '_':
+                        print "REMOVING:", value[1:]
+                        values[key].remove(value[1:])
                     else:
                         values[key].add(value)
+                    # send response
                     for value in values[key]:
                         msg_send += [key, value]
                 else: # it is a request

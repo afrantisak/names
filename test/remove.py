@@ -14,7 +14,7 @@ with testlib.Servers(addresses) as servers:
     # make a request, should still work, since other one still running
     testlib.Client(['--request=asdf'], addresses)
     
-    testlib.Client(['--push=asdf:_'], addresses)
+    testlib.Client(['--push=asdf:_qwer'], addresses)
     
     servers.restart(0)
     
