@@ -94,7 +94,7 @@ def run_test(name, instruction, cmd, refop, timeout, options):
     sys.stdout = old_stdout
 
     if ret == -1:
-        print "Invalid file %s: invalid instruction '%s' in line #%d: '%s'" % (abspath, instruction, nLine, sLine)
+        print "Invalid instruction '%s'" % (instruction)
     elif ret:
         print "FAILED"
     else:
@@ -136,10 +136,10 @@ def run(testfilename, tests, refop, timeout):
     found = 0
     data = yaml.safe_load(open(abspath, 'r'))
     options = {}
-    if 'global' in data:
-        options = data['global']
-    if 'tests' in data:
-        aggregate, found = recurse(data['tests'], tests, refop, timeout, options)
+    if '.global' in data:
+        options = data['.global']
+        data.remove('.global')
+    aggregate, found = recurse(data, tests, refop, timeout, options)
     if not found:
         print "No tests found"
     return aggregate
