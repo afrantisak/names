@@ -5,7 +5,7 @@ import client
 import logging
 
 import logging
-logging.basicConfig(filename='didi_server.log', level=logging.INFO,
+logging.basicConfig(filename='nds_server.log', level=logging.INFO,
     format='%(asctime)s.%(msecs)03d %(process)X %(thread)X %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 def run(server_addresses):
@@ -91,7 +91,7 @@ def run(server_addresses):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="didi server")
+    parser = argparse.ArgumentParser(description="network dictionary server")
     parser.add_argument('servers', nargs='+',
                         help="address(es).  The first address will be hosted.  The other addresses are peers")
     args = parser.parse_args()

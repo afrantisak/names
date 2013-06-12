@@ -4,7 +4,7 @@ import zmq
 import collections
 
 class Client(object):
-    protocol = 'didi01'
+    protocol = 'nds01'
     empty = collections.defaultdict(set)
     def __init__(self, server_addresses, timeout = 2.5):
         self.server_addresses = server_addresses
@@ -76,7 +76,7 @@ class Client(object):
         
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="nameservice test client")
+    parser = argparse.ArgumentParser(description="nds test client")
     parser.add_argument('--request', action="append",
                         help="request key")
     parser.add_argument('--push', action="append",

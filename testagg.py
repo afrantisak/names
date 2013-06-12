@@ -144,9 +144,9 @@ def parse(testfilename, tests, refop, timeout):
         
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="test runner")
+    parser = argparse.ArgumentParser(description="test aggregator")
     parser.add_argument('--testfile', default="testagg.yml",
-                        help="tst filename")
+                        help="test yaml filename")
     parser.add_argument('tests', nargs='?',
                         help="run these tests only")
     parser.add_argument('--ref', choices=['cmp', 'gen', 'ignore', 'dump'], default='cmp',
