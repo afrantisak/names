@@ -68,7 +68,7 @@ def run(server_addresses):
                 if value:
                     # store or remove value
                     if value[0] == '_':
-                        print "REMOVING:", value[1:]
+                        logging.debug("REMOVING: %s" % value[1:])
                         values[key].remove(value[1:])
                     else:
                         values[key].add(value)
