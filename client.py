@@ -74,14 +74,14 @@ class Client(object):
         if valid:
             return reply
             
-def tree(defaultdict):
+def tree(defaultdict, indent='    '):
     if not defaultdict:
-        return "<none>"
+        return indent + "<none>"
     s = ''
     for k, v in defaultdict.iteritems():
-        s += '    ' + k + ":\n"
+        s += indent + k + ":\n"
         for value in v:
-            s += '        ' + value + "\n"
+            s += indent + indent + value + "\n"
     return s
         
 if __name__ == "__main__":
