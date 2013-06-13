@@ -78,7 +78,7 @@ class Client(object):
         if valid:
             return reply
             
-def tree(defaultdict, indent='    '):
+def prettyprint(defaultdict, indent='    '):
     if not defaultdict:
         return indent + "<none>"
     s = ''
@@ -110,5 +110,5 @@ if __name__ == "__main__":
             requests[pair[0]].add(pair[1])
     response = client.request(requests)
     print "received:"
-    print tree(response),
+    print prettyprint(response),
     client.destroy()

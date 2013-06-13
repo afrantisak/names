@@ -65,13 +65,11 @@ def run(server_addresses):
             # parse message
             sequence = msg_recv[0]
             msg_recv = msg_recv[1:]
-            msg_send = [protocol, sequence]
+            union = client.Client.empty()
 
             if len(msg_recv) == 0:
                 # key not set, it is a request all
-                for key in values.keys():
-                    for value in values[key]:
-                        msg_send += [key, value]
+                union = values
             while len(msg_recv):
                 key = msg_recv[0]
                 value = msg_recv[1]
@@ -87,14 +85,20 @@ def run(server_addresses):
                         values[key].add(value)
                     # send response
                     for value in values[key]:
-                        msg_send += [key, value]
+                        union[key].add(value)
                 else: # it is a request
                     # do we know it?
                     if key in values:
                         for value in values[key]:
-                            msg_send += [key, value]
+                            union[key].add(value)
                     else:
-                        msg_send += [key, '']
+                        union[key].add('')
+                        
+            # construct the msg from the union
+            msg_send = [protocol, sequence]
+            for key in union.keys():
+                for value in union[key]:
+                    msg_send += [key, value]
         
             logging.info(str(msg_recv_orig) + " -> " + str(msg_send))
             server.send_multipart(msg_send)
