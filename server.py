@@ -30,7 +30,7 @@ def run(server_addresses):
     server = context.socket(zmq.REP)
     server.bind(server_addresses[0])
     
-    values = client.Client.empty()
+    values = client.Multimap()
 
     # the rest are peers
     if len(server_addresses) > 1:
@@ -65,7 +65,7 @@ def run(server_addresses):
             # parse message
             sequence = msg_recv[0]
             msg_recv = msg_recv[1:]
-            union = client.Client.empty()
+            union = client.Multimap()
 
             if len(msg_recv) == 0:
                 # key not set, it is a request all

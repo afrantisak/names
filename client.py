@@ -3,7 +3,11 @@ import time
 import zmq
 import collections
 
-class Client(object):
+class Multimap(collections.defaultdict):
+    def __init__(self):
+        super(Multimap, self).__init__(set)
+
+class Client():
     protocol = 'nds01'
     def __init__(self, server_addresses, timeout = 2.5):
         self.server_addresses = server_addresses
@@ -16,10 +20,6 @@ class Client(object):
             self.socket.connect(server_address)
         self.poll = zmq.Poller()
         self.poll.register(self.socket, zmq.POLLIN)
-
-    @staticmethod
-    def empty():
-        return collections.defaultdict(set)
 
     def destroy(self):
         self.socket.setsockopt(zmq.LINGER, 0)  # Terminate early
@@ -36,7 +36,7 @@ class Client(object):
             
     def recv(self, sequence, validfunc):
         # wait (with timeout) for responses that match the sequence number until validfunc returns valid dict
-        union = Client.empty()
+        union = Multimap()
         endtime = time.time() + self.timeout
         while time.time() < endtime:
             socks = dict(self.poll.poll((endtime - time.time())))
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     client = Client(args.servers)
-    requests = Client.empty()
+    requests = Multimap()
     if args.request:
         for key in args.request:
             requests[key].add('')
