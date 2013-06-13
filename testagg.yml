@@ -5,3 +5,4 @@ test:
     multreq:    ref python multreq.py
     latejoin:   ref python latejoin.py
     remove:     ref python remove.py
+    dupreq:     ref python dupreq.py

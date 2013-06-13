@@ -30,7 +30,7 @@ def run(server_addresses):
     server = context.socket(zmq.REP)
     server.bind(server_addresses[0])
     
-    values = client.Client.empty
+    values = client.Client.empty()
 
     # the rest are peers
     if len(server_addresses) > 1:

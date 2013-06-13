@@ -5,7 +5,6 @@ import collections
 
 class Client(object):
     protocol = 'nds01'
-    empty = collections.defaultdict(set)
     def __init__(self, server_addresses, timeout = 2.5):
         self.server_addresses = server_addresses
         self.timeout = timeout
@@ -17,6 +16,10 @@ class Client(object):
             self.socket.connect(server_address)
         self.poll = zmq.Poller()
         self.poll.register(self.socket, zmq.POLLIN)
+
+    @staticmethod
+    def empty():
+        return collections.defaultdict(set)
 
     def destroy(self):
         self.socket.setsockopt(zmq.LINGER, 0)  # Terminate early
@@ -33,7 +36,7 @@ class Client(object):
             
     def recv(self, sequence, validfunc):
         # wait (with timeout) for responses that match the sequence number until validfunc returns valid dict
-        union = Client.empty
+        union = Client.empty()
         endtime = time.time() + self.timeout
         while time.time() < endtime:
             socks = dict(self.poll.poll((endtime - time.time())))
@@ -57,7 +60,8 @@ class Client(object):
     def request(self, requests):
         msg = []
         for key, value in requests.iteritems():
-            msg += [key, value]
+            for v2 in value:
+                msg += [key, v2]
         
         # send it to all servers
         seq = self.send(msg)
@@ -87,23 +91,23 @@ def tree(defaultdict, indent='    '):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="nds test client")
-    parser.add_argument('--request', action="append",
+    parser.add_argument('--request', action='append', 
                         help="request key")
-    parser.add_argument('--push', action="append",
+    parser.add_argument('--push', action='append',
                         help="push key:value (i.e. use colon as separator)")
     parser.add_argument('servers', nargs='+',
                         help="server(s)")
     args = parser.parse_args()
 
     client = Client(args.servers)
-    requests = {}
+    requests = Client.empty()
     if args.request:
         for key in args.request:
-            requests[key] = ''
+            requests[key].add('')
     if args.push:
         for kvp in args.push:
             pair = kvp.split(':')
-            requests[pair[0]] = pair[1]
+            requests[pair[0]].add(pair[1])
     response = client.request(requests)
     print "received:"
     print tree(response),
