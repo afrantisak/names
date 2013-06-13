@@ -147,7 +147,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="test aggregator")
     parser.add_argument('--testfile', default="testagg.yml",
                         help="test yaml filename")
-    parser.add_argument('tests', nargs='?',
+    parser.add_argument('tests', nargs='*', 
                         help="run these tests only")
     parser.add_argument('--ref', choices=['cmp', 'gen', 'none', 'dump'], default='cmp',
                         help="ref file operations (default=cmp)")
