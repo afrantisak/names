@@ -3,11 +3,10 @@ network dictionary service
 
 ####Status: [![Build Status](https://travis-ci.org/afrantisak/names.png?branch=master)](https://travis-ci.org/afrantisak/names/builds)
 
-Modeled after the "[Brutal Shotgun Massacre](http://zguide.zeromq.org/page:all#toc110)" pattern.
-* Client sends out identical requests to all servers.  The first server to respond wins, and all subsequent responses are ignored.
-* Examples:
-    1. Client requests definitions for a key.  Server returns all known definitions for that key. 
-    1. Client pushes new definition for a key.  Server returns all known definitions for that key (plus the new definition).
-    1. Client removes definition for a key.  Server returns all known definition for that key (minus the one that was removed)
-    1. Server requests definitions for all keys from a peer.  Peer server returns all known definitions for all keys.  This happens on server startup to handle server late-join scenarios.
-* Multiple keys and definitions can be requested, pushed and removed all in the same message from clients.  Multiple keys and definitions can be returned all in the same message from servers.
+The dictionary is essentially a multimap of string to strings.  Each entry(key) can have multiple definitions(values).  The networking is modeled after the ZeroMQ "[Brutal Shotgun Massacre](http://zguide.zeromq.org/page:all#toc110)" pattern, in that the client sends out identical requests to all servers.  The first server to respond wins, and all subsequent responses are ignored.
+
+* Use cases:
+    1. Client requests definitions for an entry.  Server returns all definitions for that entry. 
+    1. Client pushes a new definition for an entry.  Server returns all definitions for that entry (plus the new definition).
+    1. Client removes a definition for an entry.  Server returns all definitions for that entry (minus the one that was removed)
+    1. Client requests all definitions for all entries.  Server returns all definitions for all entries.  This happens on server startup to handle server late-join or restart scenarios.  The server in this case acts like a client and requests the dictionary dump from its peers.
