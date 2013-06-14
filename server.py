@@ -44,7 +44,7 @@ def run(server_addresses):
             # wait to get as many repsonses as we can before the timeout 
             # (ignore valid flag - we know it will be false)
             values, valid = peers.recv(seq, lambda response: False)
-
+            
     # print our host address to console
     print "Server:", server_addresses[0]
     sys.stdout.flush()
@@ -69,6 +69,7 @@ def run(server_addresses):
 
             if len(msg_recv) == 0:
                 # key not set, it is a request all
+                #union.copyall(values)
                 union = values
             while len(msg_recv):
                 key = msg_recv[0]
@@ -84,24 +85,20 @@ def run(server_addresses):
                     else:
                         values[key].add(value)
                     # send response
-                    for value in values[key]:
-                        union[key].add(value)
+                    union.copy(values, key)
                 else: # it is a request
                     # do we know it?
                     if key in values:
-                        for value in values[key]:
-                            union[key].add(value)
+                        union.copy(values, key)
                     else:
                         union[key].add('')
                         
             # construct the msg from the union
-            msg_send = [protocol, sequence]
-            for key in union.keys():
-                for value in union[key]:
-                    msg_send += [key, value]
+            msg_send = client.SendMessage(protocol, sequence)
+            msg_send.add(union)
         
-            logging.info(str(msg_recv_orig) + " -> " + str(msg_send))
-            server.send_multipart(msg_send)
+            logging.info(str(msg_recv_orig) + " -> " + str(msg_send.get()))
+            server.send_multipart(msg_send.get())
         else:
             # invalid protocol
             logging.error(str(msg_recv_orig) + ": Unknown protocol")

@@ -25,7 +25,7 @@ def TimeoutProcess(procfunc, timeout):
                 if hasattr(self.proc, 'postprocess'):
                     out = out.split('\n')[:-1]
                     out = [line + '\n' for line in out]
-                    self.proc.postprocess(out)
+                    self.ret = self.proc.postprocess(out)
                 elif out:
                     print out.rstrip()
         def kill(self):
@@ -33,7 +33,9 @@ def TimeoutProcess(procfunc, timeout):
                 # kill with extreme prejudice
                 os.killpg(os.getpgid(self.proc.pid), signal.SIGKILL)
         def returncode(self):
-            if self.proc:
+            if hasattr(self, 'ret'):
+                return self.ret
+            elif self.proc:
                 return self.proc.returncode
             elif self.proc == 0:
                 return 0
@@ -61,8 +63,11 @@ def testProcess(cmd, ref, refop, timeout):
             def postprocess(out):
                 import difflib
                 diff = difflib.context_diff(open(ref, 'r').readlines(), out, "Expected", "Actual", n=2)
+                ret = 0
                 for line in diff:
                     print line.rstrip()
+                    ret = 1
+                return ret
             proc.postprocess = postprocess
             return proc
     return TimeoutProcess(Proc, timeout)

@@ -47,9 +47,3 @@ class Servers():
             
 def Client(args, addresses):
     os.system(cmdstr(python(['../client.py'] + args + addresses)))
-    
-def BasicTest(addresses):
-    with Servers(addresses) as servers:
-        Client(['--request=asdf'], addresses)
-        Client(['--push=asdf:qwer'], addresses)
-        Client(['--request=asdf'], addresses)

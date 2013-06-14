@@ -2,11 +2,40 @@ import sys
 import time
 import zmq
 import collections
+import copy
 
 class Multimap(collections.defaultdict):
     def __init__(self):
         super(Multimap, self).__init__(set)
-
+        
+    def copyall(self, other):
+        #self = copy.copy(other)
+        self = other
+        
+    def copy(self, other, key):
+        for value in other[key]:
+            self[key].add(value)
+        
+    def prettyprint(self, indent='    '):
+        s = ''
+        for k, v in super(Multimap, self).iteritems():
+            s += indent + k + ":\n"
+            for value in v:
+                s += indent + indent + value + "\n"
+        return s
+        
+class SendMessage():
+    def __init__(self, protocol, sequence):
+        self.msg = [protocol, sequence]
+        
+    def add(self, multimap):
+        for key in multimap.keys():
+            for value in multimap[key]:
+                self.msg += [key, value]
+                
+    def get(self):
+        return self.msg
+        
 class Client():
     protocol = 'nds01'
     def __init__(self, server_addresses, timeout = 2.5):
@@ -78,16 +107,11 @@ class Client():
         if valid:
             return reply
             
-def prettyprint(defaultdict, indent='    '):
-    if not defaultdict:
+def prettyprint(data, indent='    '):
+    if not data:
         return indent + "<none>"
-    s = ''
-    for k, v in defaultdict.iteritems():
-        s += indent + k + ":\n"
-        for value in v:
-            s += indent + indent + value + "\n"
-    return s
-        
+    return data.prettyprint(indent)
+    
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="nds test client")
