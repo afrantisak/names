@@ -73,7 +73,6 @@ def run(server_addresses):
                 #union.copyall(values)
                 union = values
             while len(msg_recv):
-                print msg_recv
                 cmd = msg_recv[0]
                 key = msg_recv[1]
                 value = msg_recv[2]

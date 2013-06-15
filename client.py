@@ -55,7 +55,7 @@ class Client():
         self.socket.close()
         self.context.term()
         
-    def send(self, msg = []): # default message is a request all
+    def send(self, msg):
         self.sequence += 1
         msg = ['', Client.protocol, str(self.sequence)] + msg
         # send the request to all connected servers
@@ -81,8 +81,7 @@ class Client():
                         msg = msg[2:]
                         if value:
                             union[key].add(value)
-                    resp = validfunc(union)
-                    if resp:
+                    if validfunc(union):
                         return union, True
         return union, False
 
@@ -116,7 +115,7 @@ class Client():
         if valid:
             return reply
             
-def prettyprint(data, indent='    '):
+def pretty(data, indent='    '):
     if not data:
         return indent + "<none>"
     return data.prettyprint(indent)
@@ -144,5 +143,5 @@ if __name__ == "__main__":
             msg += client.gen_set(requests)
     response = client.sendrecv(msg)
     print "received:"
-    print prettyprint(response),
+    print pretty(response),
     client.destroy()
