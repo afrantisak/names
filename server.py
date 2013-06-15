@@ -39,7 +39,7 @@ def run(server_addresses):
             peers = client.Client(server_addresses[1:])
             
             # request initial dump from all peers
-            seq = peers.send()
+            seq = peers.send(['DUMP'])
                 
             # wait to get as many repsonses as we can before the timeout 
             # (ignore valid flag - we know it will be false)
@@ -67,26 +67,27 @@ def run(server_addresses):
             msg_recv = msg_recv[1:]
             union = client.Multimap()
 
-            if len(msg_recv) == 0:
+            if msg_recv[0] == 'DUMP':
+                msg_recv = []
                 # key not set, it is a request all
                 #union.copyall(values)
                 union = values
             while len(msg_recv):
-                key = msg_recv[0]
-                value = msg_recv[1]
-                msg_recv = msg_recv[2:]
+                print msg_recv
+                cmd = msg_recv[0]
+                key = msg_recv[1]
+                value = msg_recv[2]
+                msg_recv = msg_recv[3:]
 
                 # if value is set, then it is a push
-                if value:
-                    # store or remove value
-                    if value[0] == '_':
-                        logging.debug("REMOVING: %s" % value[1:])
-                        values[key].remove(value[1:])
-                    else:
-                        values[key].add(value)
-                    # send response
+                if cmd == 'SET':
+                    values[key].add(value)
                     union.copy(values, key)
-                else: # it is a request
+                if cmd == 'CLR':
+                    logging.debug("REMOVING: %s" % value[1:])
+                    values[key].remove(value[1:])
+                    union.copy(values, key)
+                if cmd == 'REQ':
                     # do we know it?
                     if key in values:
                         union.copy(values, key)

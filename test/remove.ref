@@ -11,11 +11,15 @@ received:
 Client: tcp://127.0.0.1:8000
 Client: tcp://127.0.0.1:8001
 received:
-    <none>
+    asdf:
+        _qwer
+        qwer
 Querying peers:
     Client: tcp://127.0.0.1:8001
 Server: tcp://127.0.0.1:8000
 Client: tcp://127.0.0.1:8000
 Client: tcp://127.0.0.1:8001
 received:
-    <none>
+    asdf:
+        _qwer
+        qwer

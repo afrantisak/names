@@ -86,23 +86,32 @@ class Client():
                         return union, True
         return union, False
 
-    def request(self, requests):
+    def gen_req(self, reqs):
         msg = []
-        for key, value in requests.iteritems():
-            for v2 in value:
-                msg += [key, v2]
+        for key in reqs:
+            msg += ['REQ', key, '']
+        return msg
         
+    def gen_set(self, sets):
+        msg = []
+        for key, values in sets.iteritems():
+            for value in values:
+                msg += ['SET', key, value]
+        return msg
+        
+    def sendrecv(self, msg, validfunc = lambda response: True):
         # send it to all servers
         seq = self.send(msg)
         
-        # this function makes sure we got answers for all of our questions
-        def validfunc(response):
-            for request in requests:
-                if request not in response:
-                    return None
-            return response
+#        # this function makes sure we got answers for all of our questions
+#        def validfunc(response):
+#            for request in requests:
+#                if request not in response:
+#                    return None
+#            return response
 
         # wait (with timeout) for the first response that matches the sequence number
+        #reply, valid = self.recv(seq, validfunc)
         reply, valid = self.recv(seq, validfunc)
         if valid:
             return reply
@@ -124,15 +133,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     client = Client(args.servers)
-    requests = Multimap()
+    msg = []
     if args.request:
-        for key in args.request:
-            requests[key].add('')
+        msg += client.gen_req(args.request)
     if args.push:
+        requests = Multimap()
         for kvp in args.push:
             pair = kvp.split(':')
             requests[pair[0]].add(pair[1])
-    response = client.request(requests)
+            msg += client.gen_set(requests)
+    response = client.sendrecv(msg)
     print "received:"
     print prettyprint(response),
     client.destroy()
