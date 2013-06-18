@@ -1,0 +1,10 @@
+import testlib
+
+addresses = [
+    'tcp://127.0.0.1:8000'
+]
+
+with testlib.Servers(addresses) as servers:
+    testlib.Client(['--push=asdf:def1'], addresses)
+    testlib.Client(['--push=asdf:def2'], addresses)
+    testlib.Client(['--request=asdf'], addresses)

@@ -65,33 +65,8 @@ def run(server_addresses):
             # parse message
             sequence = msg_recv[0]
             msg_recv = msg_recv[1:]
-            union = client.Multimap()
 
-            if msg_recv[0] == 'DUMP':
-                msg_recv = []
-                # key not set, it is a request all
-                #union.copyall(values)
-                union = values
-            while len(msg_recv):
-                cmd = msg_recv[0]
-                key = msg_recv[1]
-                value = msg_recv[2]
-                msg_recv = msg_recv[3:]
-
-                # if value is set, then it is a push
-                if cmd == 'SET':
-                    values[key].add(value)
-                    union.copy(values, key)
-                if cmd == 'CLR':
-                    logging.debug("REMOVING: %s" % value[1:])
-                    values[key].remove(value[1:])
-                    union.copy(values, key)
-                if cmd == 'REQ':
-                    # do we know it?
-                    if key in values:
-                        union.copy(values, key)
-                    else:
-                        union[key].add('')
+            union = client.parse(msg_recv, values)
                         
             # construct the msg from the union
             msg_send = client.SendMessage(protocol, sequence)

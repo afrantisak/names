@@ -1,5 +1,6 @@
 test:
     basic:      ref python basic.py
+    basic2def:  ref python basic2def.py
     basic3:     ref python basic3.py
     death:      ref python death.py
     multreq:    ref python multreq.py

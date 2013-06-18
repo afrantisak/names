@@ -31,11 +31,40 @@ class SendMessage():
     def add(self, multimap):
         for key in multimap.keys():
             for value in multimap[key]:
-                self.msg += [key, value]
+                self.msg += ['SET', key, value]
                 
     def get(self):
         return self.msg
         
+def parse(msg_recv, values = Multimap()):
+    union = Multimap()
+    if len(msg_recv) and msg_recv[0] == 'DUMP':
+        msg_recv = []
+        union = values
+    while len(msg_recv):
+        cmd = msg_recv[0]
+        key = msg_recv[1]
+        value = msg_recv[2]
+        msg_recv = msg_recv[3:]
+
+        if cmd == 'SET':
+            values[key].add(value)
+            union.copy(values, key)
+        if cmd == 'CLR':
+            logging.debug("REMOVING: %s" % value[1:])
+            values[key].remove(value[1:])
+            if values[key].empty():
+                values.remove(key)
+            else:
+                union.copy(values, key)
+        if cmd == 'REQ':
+            # do we know it?
+            if key in values:
+                union.copy(values, key)
+            else:
+                union[key].add('')
+    return union
+
 class Client():
     protocol = 'nds01'
     def __init__(self, server_addresses, timeout = 2.5):
@@ -62,7 +91,7 @@ class Client():
         for server in xrange(len(self.server_addresses)):
             self.socket.send_multipart(msg)
         return self.sequence
-            
+
     def recv(self, sequence, validfunc):
         # wait (with timeout) for responses that match the sequence number until validfunc returns valid dict
         union = Multimap()
@@ -75,12 +104,7 @@ class Client():
                 sequence = int(msg[2])
                 msg = msg[3:]
                 if sequence == self.sequence:
-                    while len(msg):
-                        key = msg[0]
-                        value = msg[1]
-                        msg = msg[2:]
-                        if value:
-                            union[key].add(value)
+                    union = parse(msg)
                     if validfunc(union):
                         return union, True
         return union, False

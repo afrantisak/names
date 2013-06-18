@@ -1,12 +1,14 @@
 Client: tcp://127.0.0.1:8000
 received:
     asdf:
-        
+        def1
 Client: tcp://127.0.0.1:8000
 received:
     asdf:
-        qwer
+        def2
+        def1
 Client: tcp://127.0.0.1:8000
 received:
     asdf:
-        qwer
+        def2
+        def1
