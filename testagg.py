@@ -103,8 +103,13 @@ def test(name, instruction, cmd, refop, timeout, options):
 
     # if there was anything printed to stdout, print it, nicely indented
     if mystdout.getvalue():
+        linenumber = 0
         for line in mystdout.getvalue().split('\n'):
-            print "   ", line.rstrip()
+            indent = "    "
+            linenumber += 1
+            if options['line_numbers']:
+                indent = "%4d" % linenumber
+            print indent, line.rstrip()
             
     if ret is None:
         return 127
@@ -133,12 +138,12 @@ def recurse(data, tests, refop, timeout, options):
         found += 1
     return aggregate, found
     
-def parse(testfilename, tests, refop, timeout):
+def parse(testfilename, tests, refop, timeout, line_numbers):
     abspath = os.path.abspath(testfilename)
     aggregate = 0
     found = 0
     data = yaml.safe_load(open(abspath, 'r'))
-    options = {}
+    options = {'line_numbers': line_numbers}
     if '.global' in data:
         options = data['.global']
         data.remove('.global')
@@ -158,6 +163,8 @@ if __name__ == "__main__":
                         help="ref file operations (default=cmp)")
     parser.add_argument('--deftimeout', type=float, default=20,
                         help="default timeout in seconds")
+    parser.add_argument('-N', '--line-numbers', action='store_true',
+                        help="show line numbers when printing output")
     args = parser.parse_args()
     
-    sys.exit(parse(args.testfile, args.tests, args.ref, args.deftimeout))
+    sys.exit(parse(args.testfile, args.tests, args.ref, args.deftimeout, args.line_numbers))
