@@ -3,7 +3,7 @@ network dictionary service
 
 ####Status: [![Build Status](https://travis-ci.org/afrantisak/names.png?branch=master)](https://travis-ci.org/afrantisak/names/builds)
 
-The dictionary is essentially a multimap of string to strings.  Each entry(key) can have multiple definitions(values).  The networking is modeled after the ZeroMQ "[Brutal Shotgun Massacre](http://zguide.zeromq.org/page:all#toc110)" pattern, in that the client sends out identical requests to all servers.  The first server to respond wins, and all subsequent responses are ignored.
+The dictionary is essentially a multimap of string to strings.  Each entry(key) can have multiple definitions(values).  The networking is modeled after the ZeroMQ "[Shotgun](http://zguide.zeromq.org/page:all#toc110)" pattern, in that the client sends out identical requests to all servers.  The first server to respond wins, and all subsequent responses are ignored.
 
 * Use cases:
     1. Client requests definitions for an entry.  Server returns all definitions for that entry. 

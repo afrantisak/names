@@ -52,8 +52,6 @@ def run(server_addresses):
     while True:
         # wait for a message
         msg_recv = server.recv_multipart()
-        if not msg_recv:
-            break  # Interrupted
         
         # make a copy for logging purposes
         msg_recv_orig = msg_recv
@@ -91,4 +89,7 @@ if __name__ == "__main__":
                         help="address(es).  The first address will be hosted.  The other addresses are peers")
     args = parser.parse_args()
 
-    run(args.servers)
+    try:
+        run(args.servers)
+    except KeyboardInterrupt:
+        print "INTERRUPTED"
