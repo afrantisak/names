@@ -45,5 +45,5 @@ class Servers():
             if server.returncode is None:
                 server.kill()
             
-def Client(args, addresses):
+def ClientCmdLine(args, addresses):
     os.system(cmdstr(python(['../client.py'] + args + addresses)))

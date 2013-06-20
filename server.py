@@ -25,13 +25,12 @@ class StdoutIndenter():
 
 def run(server_addresses):
     context = zmq.Context()
+    values = client.Multimap()
     
     # the first address is us
     server = context.socket(zmq.REP)
     server.bind(server_addresses[0])
     
-    values = client.Multimap()
-
     # the rest are peers
     if len(server_addresses) > 1:
         print "Querying peers:"
@@ -56,22 +55,27 @@ def run(server_addresses):
         if not msg_recv:
             break  # Interrupted
         
+        # make a copy for logging purposes
         msg_recv_orig = msg_recv
+        
+        # determine the protocol
+        protocol = ''
         if len(msg_recv) > 1:
             protocol = msg_recv[0]
-        if protocol == client.Client.protocol:
             msg_recv = msg_recv[1:]
-
-            # parse message
+        if protocol == client.Client.protocol:
+            # get the sequence number
             sequence = msg_recv[0]
             msg_recv = msg_recv[1:]
-
+            
+            # parse the rest of the message
             union = client.parse(msg_recv, values)
                         
-            # construct the msg from the union
+            # construct the return message from the results of the parsing
             msg_send = client.SendMessage(protocol, sequence)
             msg_send.add(union)
-        
+
+            # log it and send it back
             logging.info(str(msg_recv_orig) + " -> " + str(msg_send.get()))
             server.send_multipart(msg_send.get())
         else:

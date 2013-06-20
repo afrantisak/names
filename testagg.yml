@@ -7,3 +7,4 @@ test:
     latejoin:   ref python latejoin.py
     remove:     ref python remove.py
     dupreq:     ref python dupreq.py
+    #netdrop:    ref python netdrop.py

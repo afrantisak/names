@@ -8,10 +8,6 @@ class Multimap(collections.defaultdict):
     def __init__(self):
         super(Multimap, self).__init__(set)
         
-    def copyall(self, other):
-        #self = copy.copy(other)
-        self = other
-        
     def copy(self, other, key):
         for value in other[key]:
             self[key].add(value)
@@ -141,7 +137,7 @@ class Client():
             
 def pretty(data, indent='    '):
     if not data:
-        return indent + "<none>"
+        return indent + "<none>\n"
     return data.prettyprint(indent)
     
 if __name__ == "__main__":
@@ -151,11 +147,13 @@ if __name__ == "__main__":
                         help="request key")
     parser.add_argument('--push', action='append',
                         help="push key:value (i.e. use colon as separator)")
+    parser.add_argument('--timeout', type=float, default=2.5,
+                        help="timeout in seconds")
     parser.add_argument('servers', nargs='+',
                         help="server(s)")
     args = parser.parse_args()
 
-    client = Client(args.servers)
+    client = Client(args.servers, args.timeout)
     msg = []
     if args.request:
         msg += client.gen_req(args.request)

@@ -6,10 +6,10 @@ addresses = [
 ]
 
 with testlib.Servers(addresses) as servers:
-    testlib.Client(['--push=asdf:qwer'], addresses)
+    testlib.ClientCmdLine(['--push=asdf:qwer'], addresses)
 
     # kill one server
     servers.kill(0)
 
     # make a request, should still work, since other one still running
-    testlib.Client(['--request=asdf'], addresses)
+    testlib.ClientCmdLine(['--request=asdf'], addresses)

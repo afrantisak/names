@@ -1,0 +1,13 @@
+Client: tcp://192.168.1.120:8000
+received:
+    asdf:
+        
+Disconnect network, send definition
+received:
+None
+    <none>
+Reconnect network, query definition
+received:
+    asdf:
+        
+        qwer
