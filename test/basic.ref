@@ -1,3 +1,4 @@
+Server: tcp://127.0.0.1:8000
 Client: tcp://127.0.0.1:8000
 received:
     asdf:

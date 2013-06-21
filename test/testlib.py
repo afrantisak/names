@@ -14,11 +14,12 @@ def WaitForLine(proc, expected):
         readx = select.select([proc.stdout.fileno()], [], [])[0]
         if readx:
             chunk = proc.stdout.read().rstrip()
-            #print chunk
-            for line in chunk.split('\n'):
-                if line == expected:
-                    return
-            continue
+            if len(chunk):
+                print chunk
+                sys.stdout.flush()
+                for line in chunk.split('\n'):
+                    if line == expected:
+                        return
             
 class Servers():
     def __init__(self, addresses):
@@ -33,16 +34,19 @@ class Servers():
         for server in self.servers:
             WaitForLine(server, "Server: " + server.address)
     def kill(self, index):
+        #print index, len(self.servers[index].stdout.read().rstrip())
         self.servers[index].kill()
     def restart(self, index):
         rotated = self.addresses[index:] + self.addresses[:index]
         self.servers[index] = subprocess.Popen(python(['../server.py'] + rotated))
+        # TODO: use the WaitForLine here, duh
         time.sleep(3)
     def __enter__(self):
         return self
     def __exit__(self, type, value, traceback):
         for server in self.servers:
             if server.returncode is None:
+                #print server, len(server.stdout.read().rstrip())
                 server.kill()
             
 def ClientCmdLine(args, addresses):
