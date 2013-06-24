@@ -20,18 +20,6 @@ class Multimap(collections.defaultdict):
                 s += indent + indent + value + "\n"
         return s
         
-class SendMessage():
-    def __init__(self, protocol, sequence):
-        self.msg = [protocol, sequence]
-        
-    def add(self, multimap):
-        for key in multimap.keys():
-            for value in multimap[key]:
-                self.msg += ['SET', key, value]
-                
-    def get(self):
-        return self.msg
-        
 def parse(msg_recv, values = Multimap()):
     union = Multimap()
     if len(msg_recv) and msg_recv[0] == 'DUMP':

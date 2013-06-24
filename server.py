@@ -77,15 +77,17 @@ def run(server_addresses):
             union = client.parse(msg_recv, values)
                         
             # construct the return message from the results of the parsing
-            msg_send = client.SendMessage(protocol, sequence)
-            msg_send.add(union)
-
+            msg_send = [protocol, sequence]
+            for key in union.keys():
+                for value in union[key]:
+                    msg_send += ['SET', key, value]
+            
             # log it and send it back
-            logmsg = str(msg_recv_orig) + " -> " + str(msg_send.get())
+            logmsg = str(msg_recv_orig) + " -> " + str(msg_send)
             logging.info(logmsg)
             #print logmsg
             #sys.stdout.flush()
-            server.send_multipart(msg_send.get())
+            server.send_multipart(msg_send)
         else:
             # invalid protocol
             logging.error(str(msg_recv_orig) + ": Unknown protocol")
