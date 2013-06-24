@@ -7,20 +7,23 @@ def cmdstr(cmd):
 def python(cmd):
     return [sys.executable] + cmd
 
-def WaitForLine(proc, expected):
+def ProcStdout(server, expected = ''):
     import fcntl, select
-    fcntl.fcntl(proc.stdout.fileno(), fcntl.F_SETFL, fcntl.fcntl(proc.stdout.fileno(), fcntl.F_GETFL) | os.O_NONBLOCK)    
-    while proc.poll() == None:
-        readx = select.select([proc.stdout.fileno()], [], [])[0]
+    if not server.stdout:
+        return
+    fcntl.fcntl(server.stdout.fileno(), fcntl.F_SETFL, fcntl.fcntl(server.stdout.fileno(), fcntl.F_GETFL) | os.O_NONBLOCK)    
+    while server.poll() == None:
+        readx = select.select([server.stdout.fileno()], [], [])[0]
         if readx:
-            chunk = proc.stdout.read().rstrip()
+            chunk = server.stdout.read().rstrip()
             if len(chunk):
                 print chunk
                 sys.stdout.flush()
-                for line in chunk.split('\n'):
-                    if line == expected:
-                        return
-            
+                if expected:
+                    for line in chunk.split('\n'):
+                        if line == expected:
+                            return
+
 class Servers():
     def __init__(self, addresses):
         self.addresses = addresses
@@ -32,22 +35,22 @@ class Servers():
             proc.address = addresses[index]
             self.servers.append(proc)
         for server in self.servers:
-            WaitForLine(server, "Server: " + server.address)
+            ProcStdout(server, "Server: " + server.address)
     def kill(self, index):
-        #print index, len(self.servers[index].stdout.read().rstrip())
         self.servers[index].kill()
+        ProcStdout(self.servers[index])
     def restart(self, index):
         rotated = self.addresses[index:] + self.addresses[:index]
         self.servers[index] = subprocess.Popen(python(['../server.py'] + rotated))
-        # TODO: use the WaitForLine here, duh
+        # TODO: use the ProcStdout here, duh
         time.sleep(3)
     def __enter__(self):
         return self
     def __exit__(self, type, value, traceback):
         for server in self.servers:
             if server.returncode is None:
-                #print server, len(server.stdout.read().rstrip())
                 server.kill()
+                ProcStdout(server)
             
 def ClientCmdLine(args, addresses):
     os.system(cmdstr(python(['../client.py'] + args + addresses)))

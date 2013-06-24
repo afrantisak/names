@@ -81,7 +81,10 @@ def run(server_addresses):
             msg_send.add(union)
 
             # log it and send it back
-            logging.info(str(msg_recv_orig) + " -> " + str(msg_send.get()))
+            logmsg = str(msg_recv_orig) + " -> " + str(msg_send.get())
+            logging.info(logmsg)
+            #print logmsg
+            #sys.stdout.flush()
             server.send_multipart(msg_send.get())
         else:
             # invalid protocol
