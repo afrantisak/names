@@ -77,7 +77,7 @@ class Client():
         return self.sequence
 
     def recv(self, sequence):
-        # wait (with timeout) for responses that match the sequence number until validfunc returns valid dict
+        # wait (with timeout) for the first response that matches the sequence number
         union = Multimap()
         endtime = time.time() + self.timeout
         while time.time() < endtime:
@@ -95,7 +95,8 @@ class Client():
     def request(self, msg):
         # send it to all servers
         seq = self.send(msg)
-        
+
+        # wait for first response
         return self.recv(seq)
             
     def gen_get(self, reqs):
@@ -111,11 +112,6 @@ class Client():
                 msg += ['SET', key, value]
         return msg
         
-def pretty(data, indent='    '):
-    if not data:
-        return indent + "<none>\n"
-    return data.prettyprint(indent)
-    
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="nds test client")
@@ -141,5 +137,5 @@ if __name__ == "__main__":
             msg += client.gen_set(requests)
     response = client.request(msg)
     print "received:"
-    print pretty(response),
+    print response.prettyprint(),
     client.destroy()
