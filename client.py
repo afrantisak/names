@@ -76,7 +76,7 @@ class Client():
             self.socket.send_multipart(msg)
         return self.sequence
 
-    def recv(self, sequence, validfunc):
+    def recv(self, sequence):
         # wait (with timeout) for responses that match the sequence number until validfunc returns valid dict
         union = Multimap()
         endtime = time.time() + self.timeout
@@ -89,9 +89,8 @@ class Client():
                 msg = msg[3:]
                 if sequence == self.sequence:
                     union = parse(msg)
-                    if validfunc(union):
-                        return union, True
-        return union, False
+                    break
+        return union
 
     def gen_req(self, reqs):
         msg = []
@@ -106,22 +105,11 @@ class Client():
                 msg += ['SET', key, value]
         return msg
         
-    def sendrecv(self, msg, validfunc = lambda response: True):
+    def sendrecv(self, msg):
         # send it to all servers
         seq = self.send(msg)
         
-#        # this function makes sure we got answers for all of our questions
-#        def validfunc(response):
-#            for request in requests:
-#                if request not in response:
-#                    return None
-#            return response
-
-        # wait (with timeout) for the first response that matches the sequence number
-        #reply, valid = self.recv(seq, validfunc)
-        reply, valid = self.recv(seq, validfunc)
-        if valid:
-            return reply
+        return self.recv(seq)
             
 def pretty(data, indent='    '):
     if not data:

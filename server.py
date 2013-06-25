@@ -40,16 +40,7 @@ def run(server_addresses):
             # request initial dump from all peers
             seq = peers.send(['DUMP'])
             
-            responses = 0
-            def handle(response):
-                print "Peer responded"
-                responses += 1
-                #return responses == len(peers)
-                return True
-                
-            # wait to get as many repsonses as we can before the timeout 
-            # (ignore valid flag - we know it will be false)
-            values, valid = peers.recv(seq, lambda response: False)
+            values = peers.recv(seq)
             
     # print our host address to console
     print "Server:", server_addresses[0]
