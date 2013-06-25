@@ -41,7 +41,7 @@ def parse(msg_recv, values = Multimap()):
                 values.remove(key)
             else:
                 union.copy(values, key)
-        if cmd == 'REQ':
+        if cmd == 'GET':
             # do we know it?
             if key in values:
                 union.copy(values, key)
@@ -92,10 +92,16 @@ class Client():
                     break
         return union
 
-    def gen_req(self, reqs):
+    def request(self, msg):
+        # send it to all servers
+        seq = self.send(msg)
+        
+        return self.recv(seq)
+            
+    def gen_get(self, reqs):
         msg = []
         for key in reqs:
-            msg += ['REQ', key, '']
+            msg += ['GET', key, '']
         return msg
         
     def gen_set(self, sets):
@@ -105,12 +111,6 @@ class Client():
                 msg += ['SET', key, value]
         return msg
         
-    def sendrecv(self, msg):
-        # send it to all servers
-        seq = self.send(msg)
-        
-        return self.recv(seq)
-            
 def pretty(data, indent='    '):
     if not data:
         return indent + "<none>\n"
@@ -119,9 +119,9 @@ def pretty(data, indent='    '):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="nds test client")
-    parser.add_argument('--request', action='append', 
+    parser.add_argument('--get', action='append', 
                         help="request key")
-    parser.add_argument('--push', action='append',
+    parser.add_argument('--set', action='append',
                         help="push key:value (i.e. use colon as separator)")
     parser.add_argument('--timeout', type=float, default=2.5,
                         help="timeout in seconds")
@@ -131,15 +131,15 @@ if __name__ == "__main__":
 
     client = Client(args.servers, args.timeout)
     msg = []
-    if args.request:
-        msg += client.gen_req(args.request)
-    if args.push:
+    if args.get:
+        msg += client.gen_get(args.get)
+    if args.set:
         requests = Multimap()
-        for kvp in args.push:
+        for kvp in args.set:
             pair = kvp.split(':')
             requests[pair[0]].add(pair[1])
             msg += client.gen_set(requests)
-    response = client.sendrecv(msg)
+    response = client.request(msg)
     print "received:"
     print pretty(response),
     client.destroy()

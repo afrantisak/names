@@ -38,9 +38,7 @@ def run(server_addresses):
             peers = client.Client(server_addresses[1:])
             
             # request initial dump from all peers
-            seq = peers.send(['DUMP'])
-            
-            values = peers.recv(seq)
+            values = peers.request(['DUMP'])
             
     # print our host address to console
     print "Server:", server_addresses[0]

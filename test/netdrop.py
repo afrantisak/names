@@ -19,7 +19,7 @@ with testlib.Servers(addresses) as servers:
 
     # send first request, should return <none>
     cli = client.Client(addresses)
-    msg = cli.gen_req(['asdf'])
+    msg = cli.gen_get(['asdf'])
     response = cli.sendrecv(msg, debug)
     print "received:"
     print client.pretty(response),
@@ -40,7 +40,7 @@ with testlib.Servers(addresses) as servers:
     os.system('ifconfig lo up')
     
     # request again, see if it gets the message it missed
-    msg = cli.gen_req(['asdf'])
+    msg = cli.gen_get(['asdf'])
     response = cli.sendrecv(msg)
     print "received:"
     print client.pretty(response),

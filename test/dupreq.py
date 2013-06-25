@@ -5,5 +5,5 @@ addresses = [
 ]
 
 with testlib.Servers(addresses) as servers:
-    testlib.ClientCmdLine(['--push=asdf:qwer', '--push=asdf:zxcv'], addresses)
-    testlib.ClientCmdLine(['--request=asdf'], addresses)
+    testlib.ClientCmdLine(['--set=asdf:qwer', '--set=asdf:zxcv'], addresses)
+    testlib.ClientCmdLine(['--get=asdf'], addresses)
